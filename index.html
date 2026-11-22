@@ -496,6 +496,12 @@ body.locked>*:not(#gate):not(#snack):not(script){display:none!important}
 .bitem.ex .bi-n b{font-style:italic;color:var(--muted)}
 .bi-a{display:flex;flex-direction:column;align-items:flex-end;gap:2px;white-space:nowrap}.bi-a b{font-variant-numeric:tabular-nums}
 .bi-e{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;color:var(--muted)}.bitem:hover .bi-e{color:var(--accent);background:var(--surface)}
+.bitem-w{display:flex;gap:8px;align-items:stretch}.bitem-w>.bitem{flex:1;min-width:0;text-decoration:none;color:inherit}
+.bhacc{flex:0 0 auto;max-width:140px}
+.delq{flex:none;display:grid;place-items:center;min-width:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);cursor:pointer;font:600 .8rem var(--f-ui);padding:0 10px}
+.delq .ico{width:18px;height:18px}.delq:hover{color:var(--danger);border-color:var(--danger)}
+.delq.armed{background:var(--danger);border-color:var(--danger);color:#fff;white-space:nowrap}
+.erow .delq{min-height:36px}
 .bedit{padding:12px;border-radius:14px;border:1.5px solid var(--accent);background:var(--surface);display:flex;flex-direction:column;gap:10px;box-shadow:0 6px 20px -10px color-mix(in srgb,var(--accent) 50%,transparent)}
 .bedit-f{display:flex;justify-content:space-between;gap:8px}
 .bvals>.note{grid-column:1/-1;margin:0}
@@ -635,6 +641,7 @@ body.walling .rail,body.locked .rail{display:none!important}
   .rail button{min-width:58px;min-height:54px}.rail-sp{display:none}
   .snack{bottom:calc(90px + env(safe-area-inset-bottom,0px))}}
 .subnav{display:flex;justify-content:flex-start;max-width:1120px;margin:0 auto 22px}
+.subnav .seg{display:inline-flex;width:auto;gap:4px;padding:4px}.subnav .seg button{flex:0 0 auto;padding:10px 20px;white-space:nowrap;font-weight:600;font-size:.95rem;border-radius:10px}
 .subnav .seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
 </style>
 </head>
@@ -868,6 +875,7 @@ const I={
  spark:'<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
  tablet:'<rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M11 18h2"/>',
  plus:'<path d="M12 5v14M5 12h14"/>',
+ trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
  cloud:'<path d="M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 9.1 4.75 4.75 0 0 0 7 18.5z"/>',
  receipt:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
  pen:'<path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14.5 7.5l2 2"/>',
@@ -2216,11 +2224,13 @@ const Home=(function(){
     $("#hm-sum").textContent=`${plural(H.entries.length,"kostnad","kostnader")} · ${money(sum(H.entries))} totalt`;
     $("#hm-metrics").innerHTML=`<div class="card metric"><small>I år</small><b>${money(totY)}</b></div><div class="card metric"><small>${year==="alla"?"Alla år":"Visat år"}</small><b>${money(tot)}</b></div><div class="card metric"><small>Mest ${year==="alla"?"totalt":"i "+year}</small><b>${top&&top.t?esc(top.a.name):"–"}</b></div>`;
     $("#hm-rooms").innerHTML=byArea.map(({a,list,t})=>{const b=num(a.budget),pct=b?Math.min(100,t/b*100):t/max*100;
-      return `<button class="room${a.id===selArea?" on":""}" data-area="${a.id}"><b>${esc(a.name)}</b><span class="amt">${money(t)}</span><div class="pbar${b&&t>b?" low":""}"><i style="width:${pct}%"></i></div><small>${list.length?plural(list.length,"kostnad","kostnader"):"Inget än"}${b?` · budget ${money(b)}`:""}</small></button>`}).join("");
+      return `<button class="room${a.id===selArea?" on":""}" data-area="${a.id}"><b>${esc(a.name)}</b><span class="amt">${money(t)}</span><div class="pbar${b&&t>b?" low":""}"><i style="width:${pct}%"></i></div><small>${list.length?plural(list.length,"kostnad","kostnader"):"Inget än"}${b?` · budget ${money(b)}`:""}${(()=>{const r=typeof window.HemmaBudgetByArea==="function"?window.HemmaBudgetByArea(a.id):[];const t2=r.reduce((p,q)=>p+q.yr,0);return t2?` · ${money(Math.round(t2))}/år löpande`:""})()}</small></button>`}).join("");
     const shown=(selArea?ent.filter(e=>e.area===selArea):ent).slice().sort((p,q)=>(q.date||"").localeCompare(p.date||""));
-    $("#hm-list").innerHTML=`<div class="hmbar"><h3 class="eyebrow">${selArea?esc(aName(selArea)):"Alla kostnader"} · ${yLabel(year)}</h3>${selArea?`<button class="btn sm" data-area="">Visa alla rum</button>`:""}</div>`+
-      (shown.map(e=>`<div class="erow"><div class="mtxt"><b>${esc(e.what)}${e.ex?' <span class="badge">Exempel</span>':""}</b><small>${esc([fmtD(e.date),selArea?"":aName(e.area),e.cat,e.where].filter(Boolean).join(" · "))}</small>${e.note?`<small>${esc(e.note)}</small>`:""}</div><div class="acts" style="flex:none;align-items:center"><b class="eamt">${money(num(e.amount))}</b><button class="btn sm" data-edit="${e.id}">Ändra</button></div></div>`).join("")||
-       note(selArea?"Inga kostnader här ännu. Tryck på Ny kostnad.":"Inga kostnader det här året."))+(shown.length?`<div class="line sum" style="margin-top:8px"><span>Summa</span><span>${money(sum(shown))}</span></div>`:"");
+    const rec=typeof window.HemmaBudgetByArea==="function"?window.HemmaBudgetByArea(selArea||null):[];
+    $("#hm-list").innerHTML=(H.entries.some(e=>e.ex)?`<div class="loan" style="margin-bottom:10px"><span>Några kostnader är exempel.</span><button class="btn sm" id="hm-clear">Ta bort alla exempel</button></div>`:"")+`<div class="hmbar"><h3 class="eyebrow">${selArea?esc(aName(selArea)):"Alla kostnader"} · ${yLabel(year)}</h3>${selArea?`<button class="btn sm" data-area="">Visa alla rum</button>`:""}</div>`+
+      (shown.map(e=>`<div class="erow"><div class="mtxt"><b>${esc(e.what)}${e.ex?' <span class="badge">Exempel</span>':""}</b><small>${esc([fmtD(e.date),selArea?"":aName(e.area),e.cat,e.where].filter(Boolean).join(" · "))}</small>${e.note?`<small>${esc(e.note)}</small>`:""}</div><div class="acts" style="flex:none;align-items:center"><b class="eamt">${money(num(e.amount))}</b><button class="btn sm" data-edit="${e.id}">Ändra</button><button class="delq" data-hdel="${e.id}" aria-label="Ta bort ${esc(e.what)}" title="Ta bort">${ico("trash")}</button></div></div>`).join("")||
+       note(selArea?"Inga kostnader här ännu. Tryck på Ny kostnad.":"Inga kostnader det här året."))+(shown.length?`<div class="line sum" style="margin-top:8px"><span>Summa</span><span>${money(sum(shown))}</span></div>`:"")+
+      (rec.length?`<div class="hmbar" style="margin-top:18px"><h3 class="eyebrow">Löpande från budgeten</h3><a class="btn sm" href="#budget">Öppna budget</a></div>`+rec.map(r=>`<div class="erow"><div class="mtxt"><b>${esc(r.name)}</b><small>${esc([selArea?"":r.area,r.how].filter(Boolean).join(" · "))}</small></div><b class="eamt">${money(Math.round(r.yr))}/år</b></div>`).join(""):"");
     renderManage();panel.render(false)}
   function renderManage(){const box=$("#hm-manage-box");$("#hm-manage").textContent=manage?"Klar":"Ändra rum";
     if(!manage){box.innerHTML="";return}
@@ -2251,6 +2261,8 @@ const Home=(function(){
   V.addEventListener("click",e=>{const a=e.target.closest("[data-area]"),ed=e.target.closest("[data-edit]"),ad=e.target.closest("[data-ad]");
     if(a){selArea=a.dataset.area===selArea?"":a.dataset.area;if(selArea)mode="area";render();return}
     if(ed){openForm(H.entries.find(x=>x.id===ed.dataset.edit));return}
+    const hd=e.target.closest("[data-hdel]");if(hd){if(!hd.classList.contains("armed")){V.querySelectorAll(".delq.armed").forEach(x=>{x.classList.remove("armed");x.innerHTML=ico("trash")});hd.classList.add("armed");hd.textContent="Ta bort?";return}H.entries=H.entries.filter(x=>x.id!==hd.dataset.hdel);save();render();return}
+    if(e.target.closest("#hm-clear")){H.entries=H.entries.filter(x=>!x.ex);save();render();return}
     if(ad){if(!ad.dataset.armed){ad.dataset.armed="1";ad.textContent="?";ad.title="Klicka igen för att ta bort";return}
       let o=H.areas.find(x=>x.name==="Övrigt"&&x.id!==ad.dataset.ad);if(!o){o={id:uid(),name:"Övrigt",budget:""};H.areas.push(o)}
       H.entries.forEach(x=>{if(x.area===ad.dataset.ad)x.area=o.id});H.areas=H.areas.filter(x=>x.id!==ad.dataset.ad);if(selArea===ad.dataset.ad)selArea="";save();render();return}
@@ -2279,7 +2291,9 @@ const Home=(function(){
   $("#hm-opts").addEventListener("click",e=>{const m=e.target.closest("[data-hmm]");if(m){mode=m.dataset.hmm;panel.render(true)}});
   $("#hm-opts").addEventListener("change",e=>{if(e.target.matches("[data-hmsel]")){selArea=e.target.value;render()}});
   return{route(){crumbs([["Hem",""],["Hemmet","hemmet"]]);manage=false;if(!formOpen)$("#hm-form").innerHTML="";render();panel.render(true)},
-    summary:()=>({year:sum(H.entries.filter(e=>inYear(e,thisYear))),areas:H.areas.length})};
+    summary:()=>({year:sum(H.entries.filter(e=>inYear(e,thisYear))),areas:H.areas.length}),
+    areas:()=>H.areas.map(a=>({id:a.id,name:a.name})),
+    months:y=>{const r=Array(12).fill(0);H.entries.forEach(e=>{if((e.date||"").startsWith(y))r[(+e.date.slice(5,7)||1)-1]+=num(e.amount)});return r}};
 })();
 
 
@@ -2449,14 +2463,18 @@ const Budget=(function(){
     else if(x.mode==="kvartal"){for(let k=0;k<4;k++)r[(m+3*k)%12]+=a}else if(x.mode==="var")for(let i=0;i<12;i++)r[i]=num((x.vals||[])[i]);return r};
   const add12=(L)=>L.reduce((acc,x)=>{const p=perMonth(x);return acc.map((v,i)=>v+p[i])},Array(12).fill(0));
   const yr=x=>perMonth(x).reduce((a,b)=>a+b,0);
-  function calc(){const inc=add12(B.inc),exp=add12(B.items),ti=inc.reduce((a,b)=>a+b,0),te=exp.reduce((a,b)=>a+b,0),avgE=te/12,avgI=ti/12;
+  function calc(){const inc=add12(B.inc),exp=add12(allItems()),ti=inc.reduce((a,b)=>a+b,0),te=exp.reduce((a,b)=>a+b,0),avgE=te/12,avgI=ti/12;
     const fixed=B.items.filter(x=>x.mode==="man").reduce((a,x)=>a+num(x.amount),0);
     let bal=0,min=0;const sim=[];for(let i=0;i<12;i++){const m=(B.start+i)%12;bal+=Math.ceil(avgE)-exp[m];min=Math.min(min,bal);sim.push({m,exp:exp[m],bal})}
     const buffer=Math.ceil(-min/100)*100;sim.forEach(s=>s.bal+=buffer);
     return{inc,exp,ti,te,avgE,avgI,fixed,irregular:avgE-fixed,left:avgI-avgE,transfer:Math.ceil(avgE/100)*100,buffer,sim}}
   const PN=i=>esc(B.people[i]||(i?"Person 2":"Person 1"));
+  const homeItem=()=>{const v=Home.months(String(new Date().getFullYear()));if(!v.some(x=>x))return null;const acc=B.accounts.some(a=>a.id===B.homeAcc)?B.homeAcc:(B.accounts.find(a=>a.id==="hus")||B.accounts[0]||{}).id;
+    return{id:"_home",name:"Köp i Hemmet",cat:"Boende",mode:"var",vals:v,who:acc,virtual:true}};
+  const allItems=()=>{const h=homeItem();return h?B.items.concat([h]):B.items};
+  window.HemmaBudgetByArea=area=>{const A=Home.areas();return B.items.filter(x=>x.area&&(area?x.area===area:true)).map(x=>({name:x.name,yr:yr(x),area:(A.find(a=>a.id===x.area)||{}).name||"",how:(MODES.find(m=>m[0]===x.mode)||["",""])[1]}))};
   function split(){const I=[0,1].map(p=>B.inc.filter(x=>String(x.who)===String(p)).reduce((a,x)=>a+yr(x),0)/12);
-    const acc=B.accounts.map(a=>{const T=B.items.filter(x=>x.who===a.id).reduce((s,x)=>s+yr(x),0)/12,tr=Math.ceil(T/100)*100,pc=Math.min(100,Math.max(0,num(a.pct))),c=Math.round(tr*pc/100);return{a,T,tr,pc,p:[c,tr-c]}});
+    const acc=B.accounts.map(a=>{const T=allItems().filter(x=>x.who===a.id).reduce((s,x)=>s+yr(x),0)/12,tr=Math.ceil(T/100)*100,pc=Math.min(100,Math.max(0,num(a.pct))),c=Math.round(tr*pc/100);return{a,T,tr,pc,p:[c,tr-c]}});
     const own=[0,1].map(p=>B.items.filter(x=>x.who==="p"+p).reduce((s,x)=>s+yr(x),0)/12);
     const tot=[0,1].map(p=>acc.reduce((s,x)=>s+x.p[p],0)),all=tot[0]+tot[1];
     const incShare=I[0]+I[1]?Math.round(I[0]/(I[0]+I[1])*100):50;
@@ -2514,14 +2532,15 @@ const Budget=(function(){
     const where=k==="inc"?PN(+x.who||0):acc?esc(acc.name):x.who==="p0"?"Bara "+PN(0):x.who==="p1"?"Bara "+PN(1):"";
     const when=x.mode==="man"?"varje månad":x.mode==="ar"?"i "+MONL[m]:x.mode==="halvar"?"två gånger per år":x.mode==="kvartal"?"varje kvartal":"olika varje månad";
     const na=nAdj(x),big=x.mode==="var"?kr(yr(x)/12):kr(a),small=x.mode==="var"?"snitt/mån":x.mode==="man"?(na?`/mån · ${na} mån avviker`:"/mån"):when;
-    return `<button type="button" class="bitem${x.ex?" ex":""}" data-bedit="${x.id}"><span class="bi-n"><b>${esc(x.name||"Utan namn")}</b><small>${where}</small></span><span class="bi-a"><b>${big}</b><small>${small}</small></span><span class="bi-e">${ico("pen")}</span></button>`}
+    if(x.virtual)return `<div class="bitem-w"><a class="bitem" href="#hemmet"><span class="bi-n"><b>${esc(x.name)}</b><small>${where} · från rum och trädgård i år</small></span><span class="bi-a"><b>${kr(yr(x))}</b><small>i år</small></span><span class="bi-e">${ico("arrow")}</span></a><select class="bwho bhacc" data-bhacc="1" aria-label="Från konto">${B.accounts.map(a2=>`<option value="${a2.id}" ${a2.id===x.who?"selected":""}>${esc(a2.name)}</option>`).join("")}</select></div>`;
+    return `<div class="bitem-w"><button class="delq" data-bdelq="${k}:${x.id}" aria-label="Ta bort ${esc(x.name||"raden")}" title="Ta bort">${ico("trash")}</button><button type="button" class="bitem${x.ex?" ex":""}" data-bedit="${x.id}"><span class="bi-n"><b>${esc(x.name||"Utan namn")}</b><small>${where}</small></span><span class="bi-a"><b>${big}</b><small>${small}</small></span><span class="bi-e">${ico("pen")}</span></button></div>`}
   const XP=[["Skatteåterbäring",5],["Försäkringskassan",null],["Bonus",null],["Övertid",null],["Semesterersättning",6],["Sålt något",null]];
   function rowHTML(x,k){if(edit!==x.id)return compact(x,k);return `<div class="bedit">`+(k==="inc"&&x.mode==="ar"?`<div class="bx-chips"><span class="muted">Snabbval:</span>${XP.map(p=>`<button type="button" class="chip${x.name===p[0]?" on":""}" data-bxp="${x.id}:${esc(p[0])}:${p[1]==null?"":p[1]}">${esc(p[0])}</button>`).join("")}</div>`:"")+editHTML(x,k)+`<div class="bedit-f"><button class="btn sm" data-bdel="${k}:${x.id}">Ta bort</button><button class="btn pri sm" data-bdone="1">Klar</button></div></div>`}
   const nAdj=x=>x.mode==="man"&&x.adj?Object.values(x.adj).filter(v=>v!==""&&v!=null).length:0;
   function editHTML(x,k){const isVar=x.mode==="var";
     return `<div class="brow${x.ex?" ex":""}"><input data-bf="${k}:${x.id}:name" value="${esc(x.name)}" aria-label="Namn" class="bname">`+
       (k==="items"?`<select data-bf="${k}:${x.id}:cat" aria-label="Kategori">${BCATS.concat(BCATS.includes(x.cat)?[]:[x.cat]).map(c=>`<option ${c===x.cat?"selected":""}>${esc(c)}</option>`).join("")}</select>`:"")+
-      whoSel(x,k)+modeSel(x,k)+(isVar?`<button class="btn sm" data-bopen="${x.id}">${open===x.id?"Stäng":"Ange månader"}</button>`:`<input data-bf="${k}:${x.id}:amount" value="${x.amount?String(x.amount).replace(".",","):""}" inputmode="decimal" placeholder="kr" aria-label="Belopp" class="bamt">`)+monSel(x,k)+
+      whoSel(x,k)+(k==="items"?`<select data-bf="${k}:${x.id}:area" aria-label="Rum i Hemmet" class="bwho"><option value="">Inget rum i Hemmet</option>${Home.areas().map(a=>`<option value="${a.id}" ${x.area===a.id?"selected":""}>Hemmet: ${esc(a.name)}</option>`).join("")}</select>`:"")+modeSel(x,k)+(isVar?`<button class="btn sm" data-bopen="${x.id}">${open===x.id?"Stäng":"Ange månader"}</button>`:`<input data-bf="${k}:${x.id}:amount" value="${x.amount?String(x.amount).replace(".",","):""}" inputmode="decimal" placeholder="kr" aria-label="Belopp" class="bamt">`)+monSel(x,k)+
       `<span class="byr" id="by-${x.id}">${kr(yr(x))}/år</span></div>`+
       (x.mode==="man"?`<button type="button" class="btn sm badj-t" data-bopen="${x.id}">${open===x.id?"Klar med månaderna":(nAdj(x)?`Ändra månader (${nAdj(x)} avviker)`:(k==="inc"?"Annan lön vissa månader":"Annat belopp vissa månader"))}</button>`+
         (open===x.id?`<div class="bvals">${note(k==="inc"?"Skriv beloppet för de månader lönen blir annorlunda, till exempel med övertid, OB eller semesterlön. Lämna tomt där den är som vanligt.":"Skriv beloppet för de månader det blir annorlunda. Lämna tomt där det är som vanligt.")}${MONL.map((m,i)=>`<label class="fld"><span class="fl">${MON[i]}</span><input data-badj="${k}:${x.id}:${i}" value="${x.adj&&x.adj[i]!=null&&x.adj[i]!==""?String(x.adj[i]).replace(".",","):""}" inputmode="decimal" placeholder="${num(x.amount)?String(num(x.amount)):"0"}"></label>`).join("")}</div>`:""):"")+
@@ -2530,9 +2549,9 @@ const Budget=(function(){
   function renderLists(){
     $("#bu-inc").innerHTML=`<div class="hmbar"><h3 class="eyebrow">Vi som bor här</h3></div><div class="sp-names">${[0,1].map(i=>`<label class="fld"><span class="fl">${ico("users")} Person ${i+1}</span><input data-bp="${i}" value="${PN(i)}" placeholder="Namn"></label>`).join("")}</div>`+
       `<div class="hmbar" style="margin-top:14px"><h3 class="eyebrow">Inkomster</h3><span class="muted">${kr(calc().ti)}/år</span></div><div class="blist">${B.inc.map(x=>rowHTML(x,"inc")).join("")||note("Lägg till lönen.")}</div>`;
-    const groups=BCATS.concat([...new Set(B.items.map(x=>x.cat))].filter(c=>!BCATS.includes(c)));
+    const AI=allItems(),groups=BCATS.concat([...new Set(AI.map(x=>x.cat))].filter(c=>!BCATS.includes(c)));
     $("#bu-exp").innerHTML=`<div class="hmbar"><h3 class="eyebrow">Utgifter</h3><span class="muted">${kr(calc().te)}/år</span></div>`+(B.items.some(x=>x.ex)?`<div class="loan" style="margin-bottom:6px"><span>Det här är exempel. Ändra beloppen eller ta bort dem.</span><button class="btn sm" id="bu-clear">Ta bort alla exempel</button></div>`:"")+
-      groups.map(g=>{const L=B.items.filter(x=>x.cat===g);return L.length?`<div class="bgrp">${esc(g)}</div><div class="blist">${L.map(x=>rowHTML(x,"items")).join("")}</div>`:""}).join("")+(B.items.length?"":note("Inga utgifter. Tryck på Utgift."))}
+      groups.map(g=>{const L=AI.filter(x=>x.cat===g);return L.length?`<div class="bgrp">${esc(g)}</div><div class="blist">${L.map(x=>rowHTML(x,"items")).join("")}</div>`:""}).join("")+(B.items.length?"":note("Inga utgifter. Tryck på Utgift."))}
   function render(){renderLists();renderSummary()}
   const find=(k,id)=>B[k].find(x=>x.id===id);
   const V=$("#v-budget");
@@ -2545,8 +2564,8 @@ const Budget=(function(){
     if(t.dataset.bf){const[k,id,f]=t.dataset.bf.split(":"),x=find(k,id);if(!x)return;x[f]=f==="amount"?num(t.value):t.value;x.ex=false;save();const y=$("#by-"+id);if(y)y.textContent=kr(yr(x))+"/år";renderSummary()}
     if(t.dataset.badj){const[k,id,i]=t.dataset.badj.split(":"),x=find(k,id);if(!x)return;x.adj=x.adj||{};if(t.value.trim()==="")delete x.adj[i];else x.adj[i]=num(t.value);x.ex=false;save();const y=$("#by-"+id);if(y)y.textContent=kr(yr(x))+"/år";renderSummary();return}
     if(t.dataset.bv){const[k,id,i]=t.dataset.bv.split(":"),x=find(k,id);if(!x)return;x.vals=x.vals&&x.vals.length===12?x.vals:Array(12).fill(0);x.vals[+i]=num(t.value);x.ex=false;save();const y=$("#by-"+id);if(y)y.textContent=kr(yr(x))+"/år";renderSummary()}});
-  V.addEventListener("change",e=>{const t=e.target;if(t.dataset.bp||t.dataset.ban){renderLists();return}if(t.dataset.bap||t.dataset.bar){renderSummary();return}if(t.id==="bu-start"){B.start=+t.value;save();renderSummary();return}
-    if(t.dataset.bf&&/:(mode|cat|month|who)$/.test(t.dataset.bf)){const[k,id,f]=t.dataset.bf.split(":"),x=find(k,id);if(!x)return;x[f]=f==="month"?+t.value:t.value;
+  V.addEventListener("change",e=>{const t=e.target;if(t.dataset.bhacc){B.homeAcc=t.value;save();render();return}if(t.dataset.bp||t.dataset.ban){renderLists();return}if(t.dataset.bap||t.dataset.bar){renderSummary();return}if(t.id==="bu-start"){B.start=+t.value;save();renderSummary();return}
+    if(t.dataset.bf&&/:(mode|cat|month|who|area)$/.test(t.dataset.bf)){const[k,id,f]=t.dataset.bf.split(":"),x=find(k,id);if(!x)return;x[f]=f==="month"?+t.value:t.value;
       if(f==="mode"&&x.mode==="var"){if(!x.vals||x.vals.length!==12)x.vals=Array(12).fill(num(x.amount));open=x.id}save();render()}});
   V.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const d=b.dataset;
     if(d.ball!=null){B.accounts.forEach(a=>a.pct=+d.ball);save();renderSummary();return}
@@ -2556,6 +2575,7 @@ const Budget=(function(){
     if(d.bedit){edit=d.bedit;open=null;renderLists();const i=V.querySelector(`.bedit .bname`);if(i){i.focus();i.select()}return}
     if(d.bdone){edit=null;open=null;render();return}
     if(d.bopen){open=open===d.bopen?null:d.bopen;renderLists();return}
+    if(d.bdelq){if(!b.classList.contains("armed")){V.querySelectorAll(".delq.armed").forEach(x=>{x.classList.remove("armed");x.innerHTML=ico("trash")});b.classList.add("armed");b.textContent="Ta bort?";return}const[k,id]=d.bdelq.split(":");B[k]=B[k].filter(x=>x.id!==id);if(edit===id)edit=null;save();render();return}
     if(d.bdel){if(!b.dataset.armed){b.dataset.armed="1";b.textContent="?";b.title="Klicka igen för att ta bort";return}const[k,id]=d.bdel.split(":");B[k]=B[k].filter(x=>x.id!==id);if(edit===id)edit=null;save();render();return}
     if(d.bspread||d.beven){const[k,id]=(d.bspread||d.beven).split(":"),x=find(k,id),y=num($("#bv-year-"+id).value)||yr(x);if(!x||!y)return;
       x.vals=(d.bspread?ELPROFIL.map(w=>w/ELPROFIL.reduce((a,b)=>a+b,0)):Array(12).fill(1/12)).map(w=>Math.round(y*w));x.ex=false;save();render();return}
