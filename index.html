@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Yellowtail&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap">
 <style id="page-style"></style>
 <style>
-:root{
+:root{--rail:#ffffff;--ring:#94a3b8;--off:#d5dbe3;
   --bg:#f5f7fb; --surface:#ffffff; --surface-2:#f2f5f9; --fg:#0f172a; --muted:#64748b; --line:#e4e9f0; --line-2:#d3dbe6;
   --accent:#0d9488; --accent-ink:#ffffff; --accent-soft:#e0f4f1; --warn:#b45309; --danger:#dc2626; --ok:#16a34a;
   --slot:#1e293b; --dot:transparent; --liner:#eef2f7;
@@ -28,14 +28,14 @@
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0b1120; --surface:#111a2e; --surface-2:#0e1627; --fg:#e6ebf2; --muted:#94a3b8; --line:#1e293b; --line-2:#334155;
-  --accent:#2dd4bf; --accent-ink:#042f2e; --accent-soft:#0f2f2e; --warn:#fbbf24; --danger:#f87171; --ok:#4ade80;
-  --slot:#020617; --dot:transparent; --liner:#16213a;
+  --bg:#2B2E30; --surface:#363A3C; --surface-2:#3E4245; --fg:#F2F2F2; --muted:#B5B9BB; --line:#45494C; --line-2:#5A6063;
+  --accent:#6CCFC2; --accent-ink:#1E2224; --accent-soft:#2f4744; --warn:#E0B36A; --danger:#f38b82; --ok:#6CCFC2;
+  --slot:#25282A; --dot:transparent; --liner:#3a3e41; --rail:#25282A; --ring:#7D8386; --off:#5A6063;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px -12px rgba(0,0,0,.6); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0b1120; --surface:#111a2e; --surface-2:#0e1627; --fg:#e6ebf2; --muted:#94a3b8; --line:#1e293b; --line-2:#334155;
-  --accent:#2dd4bf; --accent-ink:#042f2e; --accent-soft:#0f2f2e; --warn:#fbbf24; --danger:#f87171; --ok:#4ade80;
-  --slot:#020617; --dot:transparent; --liner:#16213a;
+  --bg:#2B2E30; --surface:#363A3C; --surface-2:#3E4245; --fg:#F2F2F2; --muted:#B5B9BB; --line:#45494C; --line-2:#5A6063;
+  --accent:#6CCFC2; --accent-ink:#1E2224; --accent-soft:#2f4744; --warn:#E0B36A; --danger:#f38b82; --ok:#6CCFC2;
+  --slot:#25282A; --dot:transparent; --liner:#3a3e41; --rail:#25282A; --ring:#7D8386; --off:#5A6063;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px -12px rgba(0,0,0,.6); color-scheme:dark}
 
 *{box-sizing:border-box}
@@ -47,6 +47,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
 .ico{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
+:root[data-theme="dark"] body{background-image:none}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body{background-image:none}}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--surface) 78%,transparent);-webkit-backdrop-filter:saturate(180%) blur(14px);backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--line);
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -582,6 +584,58 @@ body.walling main{padding-block:20px}
   :root{padding:0!important}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---- översikt i Mitt Hem-stil ---- */
+.dash{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.d-tile{background:var(--surface);border:0;border-radius:8px;padding:18px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;min-width:0;min-height:170px;color:var(--fg);font:inherit;cursor:default;box-shadow:none}
+button.d-tile{cursor:pointer}button.d-tile:hover{background:var(--surface-2)}
+.d-tile>.ico{width:46px;height:46px;stroke-width:1.3;color:var(--fg)}
+.d-lbl{font-size:1rem;font-weight:500;color:var(--fg)}
+.d-panel .d-lbl{font-size:.75rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.d-cap{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+.d-cap.on{color:var(--accent)}.d-cap.warn{color:var(--warn)}
+.d-big{font:200 3.4rem/1 var(--f-display);letter-spacing:-.02em;display:flex;align-items:baseline;gap:4px}
+.d-big small{font:400 1rem var(--f-ui);color:var(--muted)}
+.d-title{font:700 1.25rem/1.25 var(--f-display)}
+.d-clock{grid-column:1/-1;min-height:200px;position:relative}
+.d-time{font:200 clamp(4.5rem,13vw,9rem)/.9 var(--f-display);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.d-date{font-size:.8rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.d-exit{position:absolute;top:12px;right:12px}
+.d-wide{grid-column:span 2}
+.d-circ{width:64px;height:64px;border-radius:50%;border:2px solid var(--ring);background:transparent;display:grid;place-items:center;padding:0;cursor:pointer;color:var(--fg);transition:background .2s,border-color .2s,color .2s}
+.d-circ .ico{width:24px;height:24px}
+.d-circ.warn{border-color:var(--warn);color:var(--warn)}.d-circ.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.d-circ:active{transform:scale(.95)}
+.d-bars{display:flex;align-items:flex-end;gap:2px;height:30px;width:100%;max-width:220px}
+.d-bars i{flex:1;background:var(--off);border-radius:2px;min-height:3px}
+.d-bars i.cheap{background:var(--accent)}.d-bars i.now{background:var(--fg)}
+.d-ort{display:flex;gap:6px;width:100%;max-width:240px}.d-ort input{flex:1;min-width:0}
+.d-panels{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.d-panel{background:var(--surface);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0;min-height:150px}
+.d-cd{display:flex;align-items:baseline;gap:10px}.d-cd b{font:300 2.2rem/1 var(--f-display);color:var(--accent);min-width:2ch}
+.d-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:.95rem}.d-row small{color:var(--muted)}
+.d-demo{grid-column:1/-1;text-align:center;font-size:.75rem;color:var(--muted);letter-spacing:.04em;margin:4px 0 0}
+.dash.wall{min-height:calc(100vh - 40px)}
+.dash.wall .d-clock{min-height:180px}.dash.wall .d-tile{min-height:132px;gap:8px}.dash.wall .d-panel{min-height:120px}.dash.wall .d-time{font-size:clamp(4rem,10vw,7.5rem)}
+@media (max-width:760px){.dash{grid-template-columns:repeat(2,minmax(0,1fr))}.d-tile{min-height:150px}.d-clock .d-exit{position:static;order:3;margin-top:4px}}
+/* meny */
+.rail{position:fixed;z-index:25;background:var(--rail);display:flex}
+.rail button{background:none;border:0;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font:500 .7rem var(--f-ui);border-radius:12px;cursor:pointer;padding:6px}
+.rail button .ico{width:24px;height:24px}
+.rail button[aria-current]{color:var(--accent);background:color-mix(in srgb,var(--fg) 6%,transparent)}
+.rail-sp{flex:1}
+body.walling .rail,body.locked .rail{display:none!important}
+@media (min-width:900px){
+  body:not(.walling){padding-right:92px}
+  .rail{top:0;right:0;bottom:0;width:92px;flex-direction:column;gap:6px;padding:calc(12px + env(safe-area-inset-top,0px)) 8px calc(12px + env(safe-area-inset-bottom,0px));border-left:1px solid var(--line)}
+  .rail button{min-height:64px}}
+@media (max-width:899px){
+  body:not(.walling){padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+  .rail{left:0;right:0;bottom:0;justify-content:space-around;padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));border-top:1px solid var(--line)}
+  .rail button{min-width:58px;min-height:54px}.rail-sp{display:none}
+  .snack{bottom:calc(90px + env(safe-area-inset-bottom,0px))}}
+.subnav{display:flex;justify-content:flex-start;max-width:1120px;margin:0 auto 22px}
+.subnav .seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
 </style>
 </head>
 <body>
@@ -598,17 +652,7 @@ body.walling main{padding-block:20px}
 </header>
 
 <main>
-  <section class="page" id="v-home">
-    <div class="hero">
-      <div class="clock" id="clock">00<i>:</i>00</div>
-      <div class="greet"><h1 id="greet">Hej</h1><p id="date"></p><div id="hero-act"></div></div>
-    </div>
-    <div class="hgrid" id="hcards"></div>
-    <div class="group" id="recent-wrap" hidden>
-      <p class="eyebrow">Senast använda</p>
-      <div class="chips" id="recent"></div>
-    </div>
-  </section>
+  <section class="page" id="v-home"></section>
 
   <section class="page" id="v-print" hidden>
     <div class="hubhead">
@@ -824,6 +868,8 @@ const I={
  spark:'<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
  tablet:'<rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M11 18h2"/>',
  plus:'<path d="M12 5v14M5 12h14"/>',
+ cloud:'<path d="M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 9.1 4.75 4.75 0 0 0 7 18.5z"/>',
+ receipt:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
  pen:'<path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14.5 7.5l2 2"/>',
  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.8c1.7.8 2.8 2.5 3 5.2"/>',
  search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
@@ -832,9 +878,13 @@ const I={
 const ico=n=>`<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${I[n]||""}</svg>`;
 
 /* ---------- navigering ---------- */
-(function(){const t=store.get("theme","light");document.documentElement.dataset.theme=t;const b=$("#themebtn");
-  const draw=()=>{b.innerHTML=document.documentElement.dataset.theme==="dark"?ico("sun"):'<svg class="ico" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>'};draw();
-  b.onclick=()=>{const n=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=n;store.set("theme",n);draw()}})();
+(function(){const R=document.documentElement,b=$("#themebtn");
+  const apply=t=>{if(t==="light"||t==="dark")R.dataset.theme=t;else delete R.dataset.theme};
+  const MOON='<svg class="ico" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>',AUTO='<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>';
+  const LBL={auto:"Tema: följer enheten",light:"Tema: ljust",dark:"Tema: mörkt"};
+  let t=store.get("theme","auto");apply(t);
+  const draw=()=>{b.innerHTML=t==="auto"?AUTO:t==="dark"?MOON:ico("sun");b.title=LBL[t];b.setAttribute("aria-label",LBL[t]+". Tryck för att byta.")};draw();
+  b.onclick=()=>{t=t==="auto"?"light":t==="light"?"dark":"auto";apply(t);store.set("theme",t);draw()}})();
 const VIEWS=["#v-home","#v-print","#v-tool","#v-garage","#v-box","#v-kids","#v-house","#v-budget","#v-smart","#v-wall","#v-sync"];
 function showView(x){VIEWS.forEach(y=>$(y).hidden=y!==x)}
 function crumbs(parts){
@@ -849,43 +899,24 @@ function route(){
   const m=decodeURIComponent(location.hash.slice(1));
   if(LEGACY[m]){location.replace("#"+LEGACY[m]);return}
   if(m.startsWith("k-")){location.replace("#t-"+m.slice(2));return}
+  if(m==="verkstan"){location.replace("#garage");return}if(m==="ekonomi"){location.replace("#budget");return}if(m==="sysslor"){location.replace("#");return}
+  paintNav(m);
   curTool=null;
   if(m==="utskrifter"||m==="3d"){showView("#v-print");crumbs([["Hem",""],m==="3d"?["3D","3d"]:["Utskrifter","utskrifter"]]);$("#hub-q").value="";renderHub(m)}
   else if(m.startsWith("t-")&&T[m.slice(2)]){showView("#v-tool");openTool(m.slice(2))}
   else if(m==="garage"||m.startsWith("g-")){showView("#v-garage");Garage.route(m)}
   else if(m==="forrad"){showView("#v-box");Box.route()}
-  else if(m==="sysslor"){showView("#v-kids");Kids.route()}
   else if(m==="hemmet"){showView("#v-house");Home.route()}
   else if(m==="budget"){showView("#v-budget");Budget.route()}
   else if(m==="smart"){showView("#v-smart");Smart.route()}
   else if(m==="synk"){showView("#v-sync");Sync.route()}
-  else if(m==="vagg"){showView("#v-wall");Wall.route();return}
+  else if(m==="vagg"){showView("#v-wall");document.body.classList.add("walling");Dash.show($("#v-wall"));return}
   else{showView("#v-home");crumbs([["Hem",""]]);renderHome()}
   window.scrollTo(0,0);
 }
 
 /* ---------- startsida ---------- */
-function tickClock(){const t=clockStr().split(":");$("#clock").innerHTML=`${t[0]}<i>:</i>${t[1]}`;
-  const h=new Date().getHours();$("#greet").textContent=h<5?"God natt":h<10?"God morgon":h<12?"God förmiddag":h<18?"God eftermiddag":"God kväll";
-  $("#date").textContent=new Date().toLocaleDateString("sv-SE",{weekday:"long",day:"numeric",month:"long"})}
-tickClock();setInterval(tickClock,15000);
-function renderHome(){
-  const gs=Garage.summary(),bs=Box.summary(),ks=Kids.summary(),hs=Home.summary(),bus=Budget.summary(),ss=Smart.summary();
-  const TINT={smart:"teal",utskrifter:"blue",garage:"orange",hemmet:"green",budget:"violet",forrad:"amber",sysslor:"pink","3d":"indigo"};
-  const card=(go,icon,h,p,pills)=>`<button class="card hcard tint-${TINT[go]||"teal"}" data-go="${go}"><span class="go">${ico("arrow")}</span><span class="ib">${ico(icon)}</span><div><h2>${h}</h2><p>${p}</p></div><div class="stat">${pills}</div></button>`;
-  const cds=countdowns().slice(0,3);
-  $("#hero-act").innerHTML=(cds.length?`<div class="chips" style="margin-bottom:10px">${cds.map(x=>`<button class="pill cd" data-go="t-nedrakning"><b>${x.days}</b> ${x.days===1?"dag":"dagar"} till ${esc(x.name.toLowerCase())}</button>`).join("")}</div>`:"")+`<button class="btn pri" data-go="t-morgon">${ico("sun")}Skriv ut morgonkvittot</button>`;
-  $("#hcards").innerHTML=card("smart","bulb","Smarta hemmet","Lampor, värme, larm, robotar och elpriset på ett ställe.",`<span class="pill${ss.live?" ok":""}">${ss.live?"Home Assistant":"Visningsläge"}</span><span class="pill">${ss.on} lampor tända</span>`)+card("utskrifter","printer","Utskrifter","Etiketter, kvitton, pyssel och praktiska lappar.",`<span class="pill ok">Etikettskrivare</span><span class="pill">${Object.values(T).filter(t=>t.group!=="3d").length} verktyg</span>`)+
-    card("garage","car","Garage","Bilar, maskiner och huset: service, påminnelser och kostnader.",`<span class="pill">${plural(gs.n,"sak","saker")}</span><span class="pill">${money(gs.tot)}</span>${gs.todo?`<span class="pill warn">${gs.todo} att göra</span>`:""}`)+
-    card("hemmet","house","Hemmet","Vad rummen, trädgården och trädäcket har kostat.",`<span class="pill">${money(hs.year)} i år</span><span class="pill">${hs.areas} rum och delar</span>`)+
-    card("budget","wallet","Budget","Inkomster och utgifter, och vad du ska lägga undan varje månad.",`<span class="pill">${money(Math.round(bus.left))} kvar/mån</span><span class="pill">${money(bus.transfer)} till räkningar</span>`)+
-    card("forrad","box","Förrådet","Vad som ligger i vilken låda, och etiketter till dem.",`<span class="pill">${plural(bs.n,"låda","lådor")}</span><span class="pill">${bs.items} saker</span>`)+
-    card("sysslor","star","Sysslor","Stjärnor för hjälp hemma, och belöning när målet nås.",ks.kids.map(k=>`<span class="pill">${esc(k.name)} ${k.stars}/${k.goal} ★</span>`).join("")||`<span class="pill">Lägg till barnen</span>`)+
-    card("3d","cube","3D","Hitta modeller, gör namnskyltar och håll koll på filamentet.",`<span class="pill">Ingen skrivare än</span><span class="pill">${Object.values(T).filter(t=>t.group==="3d").length} verktyg</span>`);
-  const rec=store.get("recent",[]).filter(id=>T[id]);
-  $("#recent-wrap").hidden=!rec.length;
-  $("#recent").innerHTML=rec.map(id=>`<button class="chip" data-go="t-${id}">${ico(T[id].icon)}${esc(T[id].title)}</button>`).join("");
-}
+function renderHome(){Dash.show($("#v-home"))}
 
 /* ---------- verktyg och formulär ---------- */
 const T={};
@@ -2623,7 +2654,7 @@ const Smart=(function(){
   V.addEventListener("input",e=>{if(e.target.dataset.bri){const l=D.lights.find(x=>x.id===e.target.dataset.bri);l.bri=+e.target.value;save();const s=e.target.parentElement.querySelector("small");if(s)s.textContent=`${l.b} · ${l.bri} %`}});
   V.addEventListener("change",e=>{if(e.target.id==="sh-follow"){D.camFollow=e.target.checked;save()}});
   function refresh(){if(!$("#v-smart").hidden)$("#sh-el").innerHTML=`<div class="hmbar"><h2 class="hm-h">Elpriset idag</h2><span class="muted">Tibber följer samma spotpris</span></div>`+elHTML(false);if(!$("#v-wall").hidden)Wall.render()}
-  return{route(){crumbs([["Hem",""],["Smarta hemmet","smart"]]);if(live()&&!haStates)haLoad();render()},refresh,elHTML,scenes:()=>SCENES,runScene(id){SCENES.find(s=>s[0]===id)[3]();save()},summary:()=>({on:D.lights.filter(l=>l.on).length,alarm:D.alarm,live:live()})};
+  return{route(){crumbs([["Hem",""],["Smarta hemmet","smart"]]);if(live()&&!haStates)haLoad();render()},refresh,elHTML,scenes:()=>SCENES,runScene(id){SCENES.find(s=>s[0]===id)[3]();D.scene=id;save()},dev:()=>D,persist:()=>save(),el:()=>elpris(),cheap:(h,f,l)=>cheapest(h,f,l),summary:()=>({on:D.lights.filter(l=>l.on).length,alarm:D.alarm,live:live()})};
 })();
 
 /* ---------- iPad-vy på väggen ---------- */
@@ -2777,6 +2808,75 @@ alter publication supabase_realtime add table public.hemma_data;`}
   syncHook=queue;
   return{queue,syncable,route(){crumbs([["Hem",""],["Synk","synk"]]);render()}};
 })();
+
+
+/* ---------- översikt (hem + vägg), meny och undermenyer ---------- */
+const Dash=(function(){
+  const pad=n=>String(n).padStart(2,"0");
+  const dagis=w=>{const snow=[71,73,75,77,85,86].includes(w.code),wet=w.rain>=50,m=Math.round(w.min);
+    return snow||m<=-3?"Vinteroverall":m<=3?(wet?"Fodrade skalkläder":"Täckbyxor och vinterjacka"):wet?"Regnställ med fleece":m<10?"Skalkläder med fleece":m<15?"Tunn jacka":"Lätta kläder"};
+  const ort=()=>((store.get("t-morgon",{})||{}).ort||"").trim();
+  const circ=(on,icon,attrs)=>`<button class="d-circ${on?" on":""}" aria-pressed="${on}" ${attrs}>${ico(icon)}</button>`;
+  function elTile(){const e=Smart.el(),h=e.data,now=new Date().getHours();
+    if(!h)return `<div class="d-tile"><span class="d-lbl">Elpris SE4</span><p class="d-cap">${e.err?"Kunde inte hämta":"Hämtar …"}</p></div>`;
+    const v=h.filter(x=>x!=null),min=Math.min(...v),max=Math.max(...v),c=Smart.cheap(h,now,3)||Smart.cheap(h,0,3),cheapSet=c?[c.i,c.i+1,c.i+2]:[];
+    return `<button class="d-tile" data-go="smart" aria-label="Elpris, öppna Styr"><span class="d-lbl">Elpris SE4</span><span class="d-big">${Math.round(h[now])}<small>öre</small></span>
+      <span class="d-bars">${h.map((x,i)=>`<i class="${i===now?"now":cheapSet.includes(i)?"cheap":""}" style="height:${x==null?0:Math.max(12,(x-Math.min(0,min))/((max-Math.min(0,min))||1)*100)}%"></i>`).join("")}</span>
+      <span class="d-cap on">${c?`Billigast ${pad(c.i)}–${pad(c.i+3)}`:""}</span></button>`}
+  function wxTile(w,o){
+    if(!o)return `<div class="d-tile"><span class="d-lbl">Vädret</span><form class="d-ort" data-ortform><input name="ort" placeholder="Din ort" aria-label="Din ort" autocomplete="address-level2"><button class="btn sm pri">Spara</button></form></div>`;
+    if(!w)return `<div class="d-tile"><span class="d-lbl">${esc(o)}</span><p class="d-cap">Hämtar vädret …</p></div>`;
+    return `<div class="d-tile">${ico(w.code<=1?"sun":"cloud")}<span class="d-big">${Math.round(w.now)}°</span><span class="d-cap">${esc(WX_TXT(w.code))} · ${esc(w.place||o)}</span></div>`}
+  function html(wall){const d=new Date(),S=Smart.dev(),s=Smart.summary(),o=ort(),w=o?wxFor(o):null,cds=countdowns().slice(0,wall?2:3),td=Garage.todos().slice(0,4),
+      shop=String((store.get("t-inkop",{})||{}).items||"").split("\n").map(x=>x.trim()).filter(Boolean).slice(0,8),
+      inne=S.heat&&S.heat[0]?S.heat[0].t:21,camsOn=S.cams.filter(c=>c.on).length,vac=S.robots.find(r=>r.kind==="vac")||{st:"–"},sc=S.scene||"";
+    const SC=[["home","Hemma","house"],["away","Borta","lock"],["night","Godnatt","moon"],["clean","Städa","spark"]];
+    return `<div class="dash${wall?" wall":""}">
+      <div class="d-tile d-clock">${wall?`<button class="btn sm d-exit" data-go="">Stäng</button>`:`<button class="btn sm d-exit" data-go="t-morgon">${ico("receipt")}Morgonkvitto</button>`}
+        <span class="d-time" data-dclock>${pad(d.getHours())}:${pad(d.getMinutes())}</span><span class="d-date">${esc(d.toLocaleDateString("sv-SE",{weekday:"long",day:"numeric",month:"long"}))}</span></div>
+      ${elTile()}${wxTile(w,o)}
+      <div class="d-tile d-wide"><span class="d-lbl">Dagis idag</span>${w?`<b class="d-title">${esc(dagis(w))}</b><span class="d-cap on">${Math.round(w.min)}° – ${Math.round(w.max)}°</span>`:`<span class="d-cap">${o?"Väntar på vädret":"Skriv in orten så tipsar jag om kläder"}</span>`}</div>
+      ${SC.map(([id,n,ic])=>{const on=sc===id;return `<div class="d-tile"><span class="d-lbl">${n}</span>${circ(on,ic,`data-dscene="${id}" aria-label="${n}"`)}<span class="d-cap${on?" on":""}">${on?(id==="clean"?"Städar":"Aktiv"):"Av"}</span></div>`}).join("")}
+      <div class="d-tile"><span class="d-lbl">Ytterdörr</span>${circ(false,"lock",`data-dact="lock" aria-label="Lås eller lås upp ytterdörren"`).replace('class="d-circ"',S.lock?'class="d-circ"':'class="d-circ warn"')}<span class="d-cap${S.lock?"":" warn"}">${S.lock?"Låst":"Olåst"}</span></div>
+      <button class="d-tile" data-go="smart"><span class="d-lbl">Inne</span><span class="d-big">${String(inne).replace(".",",")}°</span><span class="d-cap">Värmepump</span></button>
+      <div class="d-tile"><span class="d-lbl">Kameror</span>${circ(camsOn>0,"cam",`data-dact="cams" aria-label="Kameror av eller på"`)}<span class="d-cap${camsOn?" on":""}">${camsOn?camsOn+" aktiva":"Av"}</span></div>
+      <div class="d-tile"><span class="d-lbl">Dammsugare</span>${circ(vac.st==="Städar","robot",`data-dact="vac" aria-label="Starta eller stoppa dammsugaren"`)}<span class="d-cap${vac.st==="Städar"?" on":""}">${esc(vac.st)}</span></div>
+      <div class="d-panels">
+        <div class="d-panel"><span class="d-lbl">Snart</span>${cds.map(x=>`<div class="d-cd"><b>${x.days}</b><span>${x.days===1?"dag":"dagar"} till ${esc(x.name.toLowerCase())}</span></div>`).join("")||`<p class="d-cap">Inget inlagt.</p>`}</div>
+        <div class="d-panel"><span class="d-lbl">Att göra</span>${td.map(x=>`<div class="d-row"><span>${esc(x.what)} <small>${esc(x.sub)}</small></span><span class="st ${x.state}">${esc(x.when)}</span></div>`).join("")||`<p class="d-cap">Inget som brådskar.</p>`}</div>
+        <div class="d-panel"><span class="d-lbl">Att handla</span>${shop.map(x=>`<div class="d-row"><span>${esc(x)}</span></div>`).join("")||`<p class="d-cap">Listan är tom.</p>`}<button class="btn sm" data-go="t-inkop" style="margin-top:auto">Öppna listan</button></div>
+      </div>
+      ${s.live?"":`<p class="d-demo">Visningsläge · styr på riktigt när Home Assistant är inkopplat</p>`}
+    </div>`}
+  let host=null;
+  function paint(){if(host&&!host.hidden)host.innerHTML=html(host.id==="v-wall")}
+  function onClick(e){const sc=e.target.closest("[data-dscene]"),ac=e.target.closest("[data-dact]");
+    if(sc){Smart.runScene(sc.dataset.dscene);paint();return}
+    if(ac){const S=Smart.dev(),a=ac.dataset.dact;
+      if(a==="lock")S.lock=!S.lock;
+      if(a==="cams"){const on=!S.cams.some(c=>c.on);S.cams.forEach(c=>c.on=on)}
+      if(a==="vac"){const r=S.robots.find(x=>x.kind==="vac");if(r)r.st=r.st==="Städar"?"Dockad":"Städar"}
+      Smart.persist();paint()}}
+  function onSubmit(e){const f=e.target.closest("[data-ortform]");if(!f)return;e.preventDefault();const o=f.ort.value.trim();if(!o)return;const t=store.get("t-morgon",{})||{};t.ort=o;store.set("t-morgon",t);paint();[1500,4000,8000].forEach(ms=>setTimeout(paint,ms))}
+  ["#v-home","#v-wall"].forEach(id=>{const el=$(id);el.addEventListener("click",onClick);el.addEventListener("submit",onSubmit)});
+  let timer=0;
+  function show(el){host=el;paint();[1200,3500,8000].forEach(ms=>setTimeout(paint,ms));clearInterval(timer);timer=setInterval(()=>{if(!host||host.hidden){clearInterval(timer);return}
+    const c=host.querySelector("[data-dclock]"),d=new Date();if(c)c.textContent=pad(d.getHours())+":"+pad(d.getMinutes());if(d.getSeconds()<15)paint()},15000)}
+  return{show};
+})();
+
+/* meny: sidomeny på iPad och dator, flikrad på telefonen */
+const NAV=[["","house","Hem"],["smart","bulb","Styr"],["utskrifter","printer","Utskrifter"],["verkstan","car","Verkstan"],["ekonomi","wallet","Ekonomi"]];
+const SUB={verkstan:[["garage","Garage"],["3d","3D"],["forrad","Förrådet"]],ekonomi:[["budget","Budget"],["hemmet","Hemmet"]]};
+function sectionOf(m){if(!m)return "";if(m==="smart")return "smart";if(m==="garage"||m.startsWith("g-")||m==="3d"||m==="forrad")return "verkstan";
+  if(m.startsWith("t-")&&T[m.slice(2)])return T[m.slice(2)].group==="3d"?"verkstan":"utskrifter";if(m==="utskrifter")return "utskrifter";if(m==="budget"||m==="hemmet")return "ekonomi";return null}
+(function(){const r=document.createElement("nav");r.className="rail";r.id="rail";r.setAttribute("aria-label","Meny");
+  r.innerHTML=NAV.map(([go,ic,n])=>`<button data-go="${go}" data-sec="${go}">${ico(ic)}<span>${n}</span></button>`).join("")+`<span class="rail-sp"></span><button data-go="vagg" data-sec="vagg" class="rail-vila">${ico("tablet")}<span>Vila</span></button>`;
+  document.body.appendChild(r);
+  const s=document.createElement("div");s.className="subnav";s.id="subnav";s.hidden=true;$("main").prepend(s)})();
+function paintNav(m){const sec=sectionOf(m);document.querySelectorAll("#rail [data-sec]").forEach(b=>b.toggleAttribute("aria-current",b.dataset.sec===(sec==null?"#":sec)));
+  const sn=$("#subnav"),L=SUB[sec];if(!L||m.startsWith("t-")||m.startsWith("g-")){sn.hidden=true;return}
+  sn.hidden=false;sn.innerHTML=`<div class="seg" role="tablist">${L.map(([go,n])=>`<button data-go="${go}" role="tab" aria-selected="${go===m}" aria-pressed="${go===m}">${n}</button>`).join("")}</div>`}
 
 route();
 })();
