@@ -640,6 +640,10 @@ body.walling .rail,body.locked .rail{display:none!important}
   .rail{left:0;right:0;bottom:0;justify-content:space-around;padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));border-top:1px solid var(--line)}
   .rail button{min-width:58px;min-height:54px}.rail-sp{display:none}
   .snack{bottom:calc(90px + env(safe-area-inset-bottom,0px))}}
+.sh-tile.dim{opacity:.45}.scene.dim{opacity:.45}.sh-tile .acts{margin-top:auto}
+.sh-cam{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;background:var(--surface-2);display:block;margin-top:6px}
+.sh-tile.wide{grid-column:span 2}@media(max-width:560px){.sh-tile.wide{grid-column:1/-1}}
+.ha-help{margin:12px 0 6px;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:.88rem;line-height:1.45}
 .subnav{display:flex;justify-content:flex-start;max-width:1120px;margin:0 auto 22px}
 .subnav .seg{display:inline-flex;width:auto;gap:4px;padding:4px}.subnav .seg button{flex:0 0 auto;padding:10px 20px;white-space:nowrap;font-weight:600;font-size:.95rem;border-radius:10px}
 .subnav .seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
@@ -2625,6 +2629,73 @@ const Smart=(function(){
   const live=()=>!!(HA.url&&HA.token);
   async function haCall(path,body){const r=await fetch(HA.url.replace(/\/$/,"")+path,{method:body?"POST":"GET",headers:{Authorization:"Bearer "+HA.token,"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
   function haLoad(){if(!live())return;haCall("/api/states").then(s=>{haStates=s;haErr=""}).catch(e=>{haErr="Kunde inte nå Home Assistant ("+e.message+"). Kolla adressen och nyckeln."}).finally(render)}
+
+  // --- Home Assistant live via WebSocket ---
+  let ws=null,wsId=1,wsState="off",wsMsg="",haMap={},areas={},devArea={},entReg={},pend={},rTimer=0,retry=0,edit=false;
+  let hidden=new Set(store.get("ha-hidden",[]));const saveHidden=()=>store.set("ha-hidden",[...hidden]);
+  const base=()=>HA.url.trim().replace(/\/+$/,"");
+  function send(o){return new Promise((ok,no)=>{if(!ws||ws.readyState!==1)return no(new Error("Inte ansluten till Home Assistant"));const id=wsId++;o.id=id;pend[id]={ok,no};ws.send(JSON.stringify(o))})}
+  const dragging=()=>{const a=document.activeElement;return a&&a.type==="range"};
+  function soon(){clearTimeout(rTimer);rTimer=setTimeout(()=>{if(dragging()){soon();return}if(!$("#v-smart").hidden)paintBody();if(typeof Dash!=="undefined")Dash.repaint()},250)}
+  function haConnect(){if(!live())return;if(ws){const o=ws;ws=null;try{o.close()}catch(e){}}
+    if(location.protocol==="https:"&&/^http:/i.test(base())){wsState="err";wsMsg="Adressen måste börja med https:// när Hemma öppnas från webben. Använd Tailscale-adressen som slutar på .ts.net.";render();return}
+    if(retry<3){wsState="busy";wsMsg=""}
+    let sk;try{sk=new WebSocket(base().replace(/^http/i,"ws")+"/api/websocket")}catch(e){wsState="err";wsMsg="Adressen ser inte rätt ut.";render();return}
+    ws=sk;
+    sk.onmessage=ev=>{let m;try{m=JSON.parse(ev.data)}catch(e){return}
+      if(m.type==="auth_required"){sk.send(JSON.stringify({type:"auth",access_token:HA.token}));return}
+      if(m.type==="auth_invalid"){retry=99;wsState="err";wsMsg="Nyckeln godtogs inte. Skapa en ny långlivad åtkomsttoken i Home Assistant och klistra in den.";try{sk.close()}catch(e){}render();return}
+      if(m.type==="auth_ok"){retry=0;
+        Promise.all([send({type:"get_states"}),send({type:"config/area_registry/list"}),send({type:"config/device_registry/list"}),send({type:"config/entity_registry/list"})]).then(([st,ar,dv,en])=>{
+          haMap={};(st||[]).forEach(x=>haMap[x.entity_id]=x);areas={};(ar||[]).forEach(a=>areas[a.area_id]=a.name);devArea={};(dv||[]).forEach(d=>devArea[d.id]=d.area_id);entReg={};(en||[]).forEach(e=>entReg[e.entity_id]=e);
+          wsState="ok";wsMsg="";render();if(typeof Dash!=="undefined")Dash.repaint()}).catch(e=>{wsState="err";wsMsg=e.message;render()});
+        send({type:"subscribe_events",event_type:"state_changed"}).catch(()=>{});return}
+      if(m.type==="event"&&m.event&&m.event.data){const d=m.event.data;if(d.new_state)haMap[d.entity_id]=d.new_state;else delete haMap[d.entity_id];soon();return}
+      if(m.type==="result"&&pend[m.id]){const q=pend[m.id];delete pend[m.id];m.success?q.ok(m.result):q.no(new Error((m.error&&m.error.message)||"Home Assistant svarade med ett fel"))}};
+    sk.onclose=()=>{if(ws!==sk)return;ws=null;Object.values(pend).forEach(q=>q.no(new Error("Anslutningen bröts")));pend={};if(retry>=99)return;retry++;
+      if(retry>=3){wsState="err";wsMsg="Når inte Home Assistant på "+base()+". Är Tailscale påslaget i den här enheten, och stämmer adressen?"}else wsState="busy";
+      render();if(typeof Dash!=="undefined")Dash.repaint();setTimeout(()=>{if(!ws&&live())haConnect()},Math.min(30000,2000*retry))};
+  }
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&live()&&!ws){retry=Math.min(retry,2);haConnect()}});
+  function snackMsg(t){let el=$("#snack");if(!el){el=document.createElement("div");el.id="snack";el.className="snack";el.setAttribute("role","status");document.body.appendChild(el)}el.textContent=t;el.classList.add("on");clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove("on"),3500)}
+  function call(domain,service,entity,data){return send({type:"call_service",domain,service,service_data:data||{},target:{entity_id:entity}}).catch(e=>snackMsg("Det gick inte: "+e.message))}
+  const DOMS=["scene","script","light","switch","fan","cover","climate","water_heater","lock","vacuum","lawn_mower","camera","alarm_control_panel"];
+  const ORDER=d=>DOMS.indexOf(d);
+  const ents=()=>Object.values(haMap).filter(x=>{const dm=x.entity_id.split(".")[0];if(!DOMS.includes(dm))return false;const r=entReg[x.entity_id];return !(r&&(r.entity_category||r.hidden_by||r.disabled_by))});
+  const areaOf=id=>{const r=entReg[id];return (r&&(r.area_id||devArea[r.device_id]))||""};
+  const nm=x=>(x.attributes&&x.attributes.friendly_name)||x.entity_id;
+  const f1=v=>String(Math.round(v*10)/10).replace(".",",");
+  const IC={light:"bulb",switch:"bulb",fan:"spark",cover:"house",climate:"temp",water_heater:"temp",lock:"lock",vacuum:"robot",lawn_mower:"leaf",camera:"cam",alarm_control_panel:"shield"};
+  const VAC={cleaning:"Städar",docked:"Dockad",returning:"Åker hem",idle:"Väntar",paused:"Pausad",error:"Fel"},LCK={locked:"Låst",unlocked:"Olåst",locking:"Låser …",unlocking:"Låser upp …",jammed:"Fastnat",open:"Öppen"},
+    HV={heat:"Värme",cool:"Kyla",auto:"Auto",off:"Av",heat_cool:"Auto",dry:"Avfukt",fan_only:"Fläkt"},ALM={disarmed:"Avlarmat",armed_away:"Larmat",armed_home:"Skalskydd",armed_night:"Natt",triggered:"Larmar!",pending:"Väntar",arming:"Larmar på"};
+  function haTile(x){const id=x.entity_id,dm=id.split(".")[0],a=x.attributes||{},st=x.state,un=st==="unavailable"||st==="unknown",hid=hidden.has(id);
+    const hb=edit?`<button class="btn sm sh-hide${hid?"":" pri"}" data-hhide="${id}">${hid?"Dold":"Visas"}</button>`:"",nmh=`<b>${esc(nm(x))}</b>`,top=r=>`<div class="sh-top"><span class="sh-ic">${ico(IC[dm]||"spark")}</span>${hb||r||""}</div>`,cls=c=>c+(hid?" dim":"");
+    if(un)return tile(cls("off"),top()+nmh+`<small>Otillgänglig</small>`);
+    if(dm==="light"){const on=st==="on",pct=a.brightness!=null?Math.max(1,Math.round(a.brightness/2.55)):null;
+      return tile(cls("light"+(on?" on":"")),top(tog(on,`data-hx="light:toggle:${id}"`))+nmh+`<small>${on?(pct!=null?pct+" %":"På"):"Av"}</small>`+(on&&pct!=null&&!edit?`<input type="range" min="1" max="100" value="${pct}" data-hbri="${id}" aria-label="Ljusstyrka ${esc(nm(x))}">`:""))}
+    if(dm==="switch"||dm==="fan"){const on=st==="on";return tile(cls(on?"on":""),top(tog(on,`data-hx="${dm}:toggle:${id}"`))+nmh+`<small>${on?"På":"Av"}</small>`)}
+    if(dm==="cover"){const op=st==="open"||st==="opening";return tile(cls(op?"on":""),top()+nmh+`<small>${op?"Öppen":"Stängd"}</small>`+(edit?"":`<div class="acts"><button class="btn sm" data-hx="cover:${op?"close_cover":"open_cover"}:${id}">${op?"Stäng":"Öppna"}</button></div>`))}
+    if(dm==="climate"||dm==="water_heater"){const t=a.temperature,cur=a.current_temperature;
+      return tile(cls("heat"+(st!=="off"?" on":"")),top()+nmh+`<small>${cur!=null?"Nu "+f1(cur)+"°":""}${cur!=null?" · ":""}${HV[st]||esc(st)}</small>`+(t!=null&&!edit?`<div class="tstep"><button data-hct="${id}" data-d="-0.5" aria-label="Sänk">−</button><span>${f1(t)}°</span><button data-hct="${id}" data-d="0.5" aria-label="Höj">+</button></div>`:""))}
+    if(dm==="lock"){const lk=st==="locked";return tile(cls("lock"+(lk?" on":"")),top()+nmh+`<small>${LCK[st]||esc(st)}</small>`+(edit?"":`<div class="acts"><button class="btn sm${lk?"":" pri"}" data-hlock="${id}" data-st="${st}">${lk?"Lås upp":"Lås"}</button></div>`))}
+    if(dm==="vacuum"||dm==="lawn_mower"){const run=st==="cleaning"||st==="mowing";return tile(cls("robot"+(run?" on":"")),top(a.battery_level!=null?`<span class="pill">${a.battery_level} %</span>`:"")+nmh+`<small>${VAC[st]||esc(st)}</small>`+(edit?"":`<div class="acts"><button class="btn sm" data-hx="${dm}:${run?(dm==="vacuum"?"return_to_base":"dock"):(dm==="vacuum"?"start":"start_mowing")}:${id}">${run?"Åk hem":"Starta"}</button></div>`))}
+    if(dm==="camera"){return tile(cls("cam wide"),top()+nmh+(a.entity_picture?`<img class="sh-cam" loading="lazy" alt="Bild från ${esc(nm(x))}" src="${esc(base()+a.entity_picture+(a.entity_picture.includes("?")?"&":"?")+"t="+Math.floor(Date.now()/10000))}">`:`<small>${esc(st)}</small>`))}
+    if(dm==="alarm_control_panel"){return tile(cls("alarm"),top()+nmh+`<small>${ALM[st]||esc(st)}</small>`)}
+    return tile(cls(""),top()+nmh+`<small>${esc(st)}</small>`)}
+  function haBody(){
+    if(wsState!=="ok")return `<div class="card pad">${wsState==="err"?`<p class="note warn">${esc(wsMsg)}</p><div class="acts" style="margin-top:10px"><button class="btn" id="ha-retry">Försök igen</button><button class="btn" id="ha-open">Ändra adress eller nyckel</button></div>`:note("Ansluter till Home Assistant …")}</div>`;
+    const all=ents(),vis=all.filter(x=>edit||!hidden.has(x.entity_id)).sort((p,q)=>ORDER(p.entity_id.split(".")[0])-ORDER(q.entity_id.split(".")[0])||nm(p).localeCompare(nm(q),"sv"));
+    const sc=vis.filter(x=>/^(scene|script)\./.test(x.entity_id)),rest=vis.filter(x=>!/^(scene|script)\./.test(x.entity_id)),g={};
+    rest.forEach(x=>{const k=areaOf(x.entity_id);(g[k]=g[k]||[]).push(x)});
+    const keys=Object.keys(g).sort((p,q)=>!p?1:!q?-1:(areas[p]||"").localeCompare(areas[q]||"","sv"));
+    return `<div class="hmbar"><span class="muted">${edit?"Tryck på en pryl för att dölja eller visa den.":`${rest.length} prylar i ${keys.filter(Boolean).length} rum · uppdateras direkt`}</span><button class="btn sm${edit?" pri":""}" id="ha-edit">${edit?"Klar":"Välj vad som visas"}</button></div>`+
+      (sc.length?`<div class="sh-scenes">${sc.map(x=>`<button class="scene${hidden.has(x.entity_id)?" dim":""}" ${edit?`data-hhide="${x.entity_id}"`:`data-hx="${x.entity_id.split(".")[0]}:turn_on:${x.entity_id}"`}>${ico(x.entity_id.startsWith("scene")?"spark":"moon")}<span>${esc(nm(x))}</span></button>`).join("")}</div>`
+        :note("Tips: skapa scener i Home Assistant, till exempel Godnatt och Lämnar hemmet, under Inställningar → Automationer och scener → Scener. De dyker upp här automatiskt."))+
+      keys.map(k=>`<section class="sh-sec"><div class="hmbar"><h2 class="hm-h">${esc(k?(areas[k]||"Rum"):"Utan rum")}</h2><span class="muted">${g[k].length}</span></div><div class="sh-grid">${g[k].map(haTile).join("")}</div></section>`).join("")}
+  function paintBody(){const b=$("#sh-body");if(b)b.innerHTML=live()?haBody():demoHTML()}
+  function liveDash(){if(!live()||wsState!=="ok")return null;const all=ents().filter(x=>!hidden.has(x.entity_id)),by=dm=>all.filter(x=>x.entity_id.startsWith(dm+"."));
+    return{scenes:by("scene").concat(by("script")).slice(0,4).map(x=>({id:x.entity_id,name:nm(x)})),lock:by("lock")[0]||null,climate:by("climate").find(x=>x.attributes.current_temperature!=null)||null,
+      vac:by("vacuum")[0]||null,cams:by("camera").length,lightsOn:by("light").filter(x=>x.state==="on").length,lights:by("light").length}}
   function setCams(on){D.cams.forEach(c=>c.on=on)}
   function setAlarm(m){D.alarm=m;if(m!=="off")D.lock=true;if(D.camFollow)setCams(m!=="off")}
   const SCENES=[["home","Hemma","house",()=>{setAlarm("off");D.lights.forEach(l=>{if(["Hall","Kök","Vardagsrum"].includes(l.n))l.on=true})}],
@@ -2651,13 +2722,18 @@ const Smart=(function(){
         return tile(on?"on":"",`<div class="sh-top"><span class="sh-ic">${ico(DOMAIN[dm][1])}</span>${["light","switch"].includes(dm)?tog(s.state==="on",`data-ha="${dm}:${s.entity_id}"`):""}</div><b>${esc(s.attributes.friendly_name||s.entity_id)}</b><small>${esc(s.state)}${s.attributes.unit_of_measurement?" "+esc(s.attributes.unit_of_measurement):""}</small>`)}).join("")}</div></section>`}).join("")}
   $("#v-smart").innerHTML=`<div class="hubhead"><div><p class="eyebrow" id="sh-mode"></p><h1>Smarta hemmet</h1><p>Alla dina appar på ett ställe</p></div><div class="acts"><button class="btn" data-go="vagg">${ico("tablet")}iPad-vy</button><button class="btn" id="sh-set">${ico("sliders")}Koppla in</button></div></div>
     <div id="sh-setbox"></div><div class="card pad" id="sh-el"></div><div id="sh-body" class="page" style="gap:22px"></div>`;
-  function render(){$("#sh-mode").textContent=live()?"Home Assistant":"Visningsläge";
-    $("#sh-setbox").innerHTML=(!live()?`<div class="loan"><span><b>Visningsläge.</b> Knapparna fungerar men styr inget på riktigt än. När hemmaservern med Home Assistant är på plats kopplar du in den här.</span></div>`:"")+
-      (showSet?`<div class="card pad" style="margin-top:12px"><h3 class="eyebrow">Home Assistant</h3><div class="frow"><label class="fld"><span class="fl">Adress</span><input id="ha-url" value="${esc(HA.url)}" placeholder="http://homeassistant.local:8123"></label><label class="fld"><span class="fl">Åtkomstnyckel</span><input id="ha-token" type="password" value="${esc(HA.token)}" placeholder="Långlivad nyckel från din profil i Home Assistant"></label></div>`+
-        note("Nyckeln sparas bara i den här webbläsaren. Bäst fungerar det om Hemma läggs på servern och öppnas därifrån, så hjälper jag dig med det när servern är igång.")+`<div class="acts"><button class="btn pri" id="ha-save">Spara och koppla</button><button class="btn" id="ha-off">Tillbaka till visningsläge</button></div></div>`:"");
+  function render(){$("#sh-mode").textContent=live()?(wsState==="ok"?"Home Assistant · ansluten":wsState==="err"?"Home Assistant · ingen kontakt":"Home Assistant · ansluter …"):"Visningsläge";
+    $("#sh-setbox").innerHTML=(!live()?`<div class="loan"><span><b>Visningsläge.</b> Knapparna styr inget på riktigt än. Koppla in Home Assistant med knappen Koppla in.</span></div>`:"")+
+      (showSet?`<div class="card pad" style="margin-top:12px"><h3 class="eyebrow">Koppla in Home Assistant</h3>
+        <label class="fld"><span class="fl">Adress</span><input id="ha-url" value="${esc(HA.url)}" placeholder="https://homeassistant.tailxxxx.ts.net" autocapitalize="off" spellcheck="false" inputmode="url"></label>
+        <label class="fld" style="margin-top:10px"><span class="fl">Nyckel (långlivad åtkomsttoken)</span><input id="ha-token" type="password" value="${esc(HA.token)}" autocomplete="off" spellcheck="false"></label>
+        <ol class="ha-help"><li><b>Adress:</b> Tailscale-adressen till Home Assistant. Den börjar med https:// och slutar på .ts.net.</li><li><b>Nyckel:</b> i Home Assistant, tryck på ditt namn längst ner i menyn → fliken Säkerhet → Långlivade åtkomsttoken → Skapa token. Döp den till Hemma och kopiera hela.</li></ol>
+        ${note("Adressen och nyckeln synkas krypterat till era andra enheter, så ni behöver bara göra det här en gång.")}
+        <div class="acts" style="margin-top:10px"><button class="btn pri" id="ha-save">Spara och koppla</button>${live()?`<button class="btn" id="ha-off">Koppla bort</button>`:""}</div></div>`:"");
     $("#sh-el").innerHTML=`<div class="hmbar"><h2 class="hm-h">Elpriset idag</h2><span class="muted">Tibber följer samma spotpris</span></div>`+elHTML(false);
-    $("#sh-body").innerHTML=live()?haHTML():demoHTML();
-    const s=$("#ha-save");if(s){s.onclick=()=>{HA.url=$("#ha-url").value.trim();HA.token=$("#ha-token").value.trim();store.set("ha",HA);showSet=false;haStates=null;haLoad();render()};$("#ha-off").onclick=()=>{HA.url="";HA.token="";store.set("ha",HA);showSet=false;render()}}}
+    paintBody();
+    const sv=$("#ha-save");if(sv){sv.onclick=()=>{HA.url=$("#ha-url").value.trim();HA.token=$("#ha-token").value.trim();store.set("ha",HA);showSet=false;retry=0;haMap={};wsState="busy";render();haConnect()};
+      const off=$("#ha-off");if(off)off.onclick=()=>{HA.url="";HA.token="";store.set("ha",HA);showSet=false;if(ws){const o=ws;ws=null;try{o.close()}catch(e){}}wsState="off";render();if(typeof Dash!=="undefined")Dash.repaint()}}}
   $("#sh-set").onclick=()=>{showSet=!showSet;render()};
   const V=$("#v-smart");
   V.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const d=b.dataset;let ch=true;
@@ -2668,13 +2744,21 @@ const Smart=(function(){
     else if(d.lock!=null)D.lock=!D.lock;
     else if(d.cam){const c=D.cams.find(x=>x.id===d.cam);c.on=!c.on}
     else if(d.robot){const r=D.robots.find(x=>x.id===d.robot);r.st=d.a==="go"?(r.kind==="mow"?"Klipper":"Städar"):(r.kind==="mow"?"Parkerad":"Åker hem")}
-    else if(d.ha){const[dm,id]=d.ha.split(":");haCall(`/api/services/${dm}/toggle`,{entity_id:id}).then(()=>setTimeout(haLoad,600)).catch(er=>{haErr="Kommandot gick inte fram ("+er.message+").";render()});ch=false}
+    else if(d.hx){const[dm,sv,id]=d.hx.split(":");call(dm,sv,id);b.classList.add("pulse");setTimeout(()=>b.classList.remove("pulse"),600);ch=false}
+    else if(d.hct){const x=haMap[d.hct];if(x){const t=Math.round(((x.attributes.temperature||20)+ +d.d)*2)/2;x.attributes.temperature=t;call(d.hct.split(".")[0],"set_temperature",d.hct,{temperature:t});paintBody()}ch=false}
+    else if(d.hlock){if(d.st==="locked"&&!b.dataset.armed){b.dataset.armed="1";b.textContent="Säker? Tryck igen";setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent="Lås upp"}},4000);return}call("lock",d.st==="locked"?"unlock":"lock",d.hlock);ch=false}
+    else if(d.hhide){hidden.has(d.hhide)?hidden.delete(d.hhide):hidden.add(d.hhide);saveHidden();paintBody();ch=false}
+    else if(b.id==="ha-edit"){edit=!edit;paintBody();ch=false}
+    else if(b.id==="ha-retry"){retry=0;haConnect();render();ch=false}
+    else if(b.id==="ha-open"){showSet=true;render();ch=false}
     else ch=false;
     if(ch){save();render()}});
   V.addEventListener("input",e=>{if(e.target.dataset.bri){const l=D.lights.find(x=>x.id===e.target.dataset.bri);l.bri=+e.target.value;save();const s=e.target.parentElement.querySelector("small");if(s)s.textContent=`${l.b} · ${l.bri} %`}});
-  V.addEventListener("change",e=>{if(e.target.id==="sh-follow"){D.camFollow=e.target.checked;save()}});
-  function refresh(){if(!$("#v-smart").hidden)$("#sh-el").innerHTML=`<div class="hmbar"><h2 class="hm-h">Elpriset idag</h2><span class="muted">Tibber följer samma spotpris</span></div>`+elHTML(false);if(!$("#v-wall").hidden)Wall.render()}
-  return{route(){crumbs([["Hem",""],["Smarta hemmet","smart"]]);if(live()&&!haStates)haLoad();render()},refresh,elHTML,scenes:()=>SCENES,runScene(id){SCENES.find(s=>s[0]===id)[3]();D.scene=id;save()},dev:()=>D,persist:()=>save(),el:()=>elpris(),cheap:(h,f,l)=>cheapest(h,f,l),summary:()=>({on:D.lights.filter(l=>l.on).length,alarm:D.alarm,live:live()})};
+  V.addEventListener("change",e=>{if(e.target.id==="sh-follow"){D.camFollow=e.target.checked;save()}
+    if(e.target.dataset.hbri){call("light","turn_on",e.target.dataset.hbri,{brightness_pct:+e.target.value});e.target.blur()}});
+  function refresh(){if(!$("#v-smart").hidden)$("#sh-el").innerHTML=`<div class="hmbar"><h2 class="hm-h">Elpriset idag</h2><span class="muted">Tibber följer samma spotpris</span></div>`+elHTML(false);if(typeof Dash!=="undefined")Dash.repaint()}
+  if(live())setTimeout(haConnect,50);
+  return{route(){crumbs([["Hem",""],["Smarta hemmet","smart"]]);if(live()&&!ws&&wsState!=="err")haConnect();render()},liveDash,call,isLive:()=>live(),refresh,elHTML,scenes:()=>SCENES,runScene(id){SCENES.find(s=>s[0]===id)[3]();D.scene=id;save()},dev:()=>D,persist:()=>save(),el:()=>elpris(),cheap:(h,f,l)=>cheapest(h,f,l),summary:()=>({on:D.lights.filter(l=>l.on).length,alarm:D.alarm,live:live()&&wsState==="ok"})};
 })();
 
 /* ---------- iPad-vy på väggen ---------- */
@@ -2706,7 +2790,7 @@ const Sync=(function(){
   const DEF={url:"https://pirjkiusemppwnopcqnf.supabase.co",anon:"sb_publishable_Eh5dQc6iCFAMv1zhCBZIyQ_RgH0f55D",email:""};
   const LS=k=>{try{return localStorage.getItem("hemmasync-"+k)}catch(e){return null}};
   const LSset=(k,v)=>{try{v==null?localStorage.removeItem("hemmasync-"+k):localStorage.setItem("hemmasync-"+k,v)}catch(e){}};
-  const SKIP=new Set(["theme","recent","print","rc","wx","ha","smart-demo"]);
+  const SKIP=new Set(["theme","recent","print","rc","wx","smart-demo"]);
   const syncable=k=>!SKIP.has(k)&&!k.startsWith("t-")&&!k.startsWith("sync");
   const DEV=LS("dev")||(()=>{const d=Math.random().toString(36).slice(2,10);LSset("dev",d);return d})();
   let cfg=JSON.parse(LS("cfg")||"null"),key=null,sb=null,state="off",msg="",lastOk=+LS("last")||0,chan=null,pending=new Map(),timer=null,dirty=false;
@@ -2847,7 +2931,14 @@ const Dash=(function(){
     if(!o)return `<div class="d-tile"><span class="d-lbl">Vädret</span><form class="d-ort" data-ortform><input name="ort" placeholder="Din ort" aria-label="Din ort" autocomplete="address-level2"><button class="btn sm pri">Spara</button></form></div>`;
     if(!w)return `<div class="d-tile"><span class="d-lbl">${esc(o)}</span><p class="d-cap">Hämtar vädret …</p></div>`;
     return `<div class="d-tile">${ico(w.code<=1?"sun":"cloud")}<span class="d-big">${Math.round(w.now)}°</span><span class="d-cap">${esc(WX_TXT(w.code))} · ${esc(w.place||o)}</span></div>`}
-  function html(wall){const d=new Date(),S=Smart.dev(),s=Smart.summary(),o=ort(),w=o?wxFor(o):null,cds=countdowns().slice(0,wall?2:3),td=Garage.todos().slice(0,4),
+  function liveTiles(L){const f1=v=>String(Math.round(v*10)/10).replace(".",","),lk=L.lock&&L.lock.state==="locked",run=L.vac&&L.vac.state==="cleaning";
+    return L.scenes.map(x=>`<div class="d-tile"><span class="d-lbl">${esc(x.name)}</span>${circ(false,x.id.startsWith("scene")?"spark":"moon",`data-dhx="${x.id.split(".")[0]}:turn_on:${x.id}" aria-label="${esc(x.name)}"`)}<span class="d-cap">Tryck för att köra</span></div>`).join("")+
+      `<button class="d-tile" data-go="smart"><span class="d-lbl">Lampor</span><span class="d-big">${L.lightsOn}<small>av ${L.lights}</small></span><span class="d-cap${L.lightsOn?" on":""}">tända</span></button>`+
+      (L.lock?`<div class="d-tile"><span class="d-lbl">${esc(L.lock.attributes.friendly_name||"Ytterdörr")}</span>${circ(false,"lock",`data-dhl="${L.lock.entity_id}" data-st="${L.lock.state}" aria-label="Lås eller lås upp"`).replace('class="d-circ"',lk?'class="d-circ"':'class="d-circ warn"')}<span class="d-cap${lk?"":" warn"}">${lk?"Låst":"Olåst"}</span></div>`:"")+
+      (L.climate?`<button class="d-tile" data-go="smart"><span class="d-lbl">Inne</span><span class="d-big">${f1(L.climate.attributes.current_temperature)}°</span><span class="d-cap">${esc(L.climate.attributes.friendly_name||"")}</span></button>`:"")+
+      (L.cams?`<button class="d-tile" data-go="smart"><span class="d-lbl">Kameror</span>${circ(false,"cam",'tabindex="-1" aria-hidden="true"')}<span class="d-cap">${L.cams} st · visa</span></button>`:"")+
+      (L.vac?`<div class="d-tile"><span class="d-lbl">${esc(L.vac.attributes.friendly_name||"Dammsugare")}</span>${circ(run,"robot",`data-dhx="vacuum:${run?"return_to_base":"start"}:${L.vac.entity_id}" aria-label="Starta eller skicka hem dammsugaren"`)}<span class="d-cap${run?" on":""}">${run?"Städar":L.vac.state==="docked"?"Dockad":esc(L.vac.state)}</span></div>`:"")}
+  function html(wall){const L=Smart.liveDash(),d=new Date(),S=Smart.dev(),s=Smart.summary(),o=ort(),w=o?wxFor(o):null,cds=countdowns().slice(0,wall?2:3),td=Garage.todos().slice(0,4),
       shop=String((store.get("t-inkop",{})||{}).items||"").split("\n").map(x=>x.trim()).filter(Boolean).slice(0,8),
       inne=S.heat&&S.heat[0]?S.heat[0].t:21,camsOn=S.cams.filter(c=>c.on).length,vac=S.robots.find(r=>r.kind==="vac")||{st:"–"},sc=S.scene||"";
     const SC=[["home","Hemma","house"],["away","Borta","lock"],["night","Godnatt","moon"],["clean","Städa","spark"]];
@@ -2856,11 +2947,11 @@ const Dash=(function(){
         <span class="d-time" data-dclock>${pad(d.getHours())}:${pad(d.getMinutes())}</span><span class="d-date">${esc(d.toLocaleDateString("sv-SE",{weekday:"long",day:"numeric",month:"long"}))}</span></div>
       ${elTile()}${wxTile(w,o)}
       <div class="d-tile d-wide"><span class="d-lbl">Dagis idag</span>${w?`<b class="d-title">${esc(dagis(w))}</b><span class="d-cap on">${Math.round(w.min)}° – ${Math.round(w.max)}°</span>`:`<span class="d-cap">${o?"Väntar på vädret":"Skriv in orten så tipsar jag om kläder"}</span>`}</div>
-      ${SC.map(([id,n,ic])=>{const on=sc===id;return `<div class="d-tile"><span class="d-lbl">${n}</span>${circ(on,ic,`data-dscene="${id}" aria-label="${n}"`)}<span class="d-cap${on?" on":""}">${on?(id==="clean"?"Städar":"Aktiv"):"Av"}</span></div>`}).join("")}
+      ${L?liveTiles(L):""}${L?"":SC.map(([id,n,ic])=>{const on=sc===id;return `<div class="d-tile"><span class="d-lbl">${n}</span>${circ(on,ic,`data-dscene="${id}" aria-label="${n}"`)}<span class="d-cap${on?" on":""}">${on?(id==="clean"?"Städar":"Aktiv"):"Av"}</span></div>`}).join("")+`
       <div class="d-tile"><span class="d-lbl">Ytterdörr</span>${circ(false,"lock",`data-dact="lock" aria-label="Lås eller lås upp ytterdörren"`).replace('class="d-circ"',S.lock?'class="d-circ"':'class="d-circ warn"')}<span class="d-cap${S.lock?"":" warn"}">${S.lock?"Låst":"Olåst"}</span></div>
       <button class="d-tile" data-go="smart"><span class="d-lbl">Inne</span><span class="d-big">${String(inne).replace(".",",")}°</span><span class="d-cap">Värmepump</span></button>
       <div class="d-tile"><span class="d-lbl">Kameror</span>${circ(camsOn>0,"cam",`data-dact="cams" aria-label="Kameror av eller på"`)}<span class="d-cap${camsOn?" on":""}">${camsOn?camsOn+" aktiva":"Av"}</span></div>
-      <div class="d-tile"><span class="d-lbl">Dammsugare</span>${circ(vac.st==="Städar","robot",`data-dact="vac" aria-label="Starta eller stoppa dammsugaren"`)}<span class="d-cap${vac.st==="Städar"?" on":""}">${esc(vac.st)}</span></div>
+      <div class="d-tile"><span class="d-lbl">Dammsugare</span>${circ(vac.st==="Städar","robot",`data-dact="vac" aria-label="Starta eller stoppa dammsugaren"`)}<span class="d-cap${vac.st==="Städar"?" on":""}">${esc(vac.st)}</span></div>`}
       <div class="d-panels">
         <div class="d-panel"><span class="d-lbl">Snart</span>${cds.map(x=>`<div class="d-cd"><b>${x.days}</b><span>${x.days===1?"dag":"dagar"} till ${esc(x.name.toLowerCase())}</span></div>`).join("")||`<p class="d-cap">Inget inlagt.</p>`}</div>
         <div class="d-panel"><span class="d-lbl">Att göra</span>${td.map(x=>`<div class="d-row"><span>${esc(x.what)} <small>${esc(x.sub)}</small></span><span class="st ${x.state}">${esc(x.when)}</span></div>`).join("")||`<p class="d-cap">Inget som brådskar.</p>`}</div>
@@ -2870,7 +2961,11 @@ const Dash=(function(){
     </div>`}
   let host=null;
   function paint(){if(host&&!host.hidden)host.innerHTML=html(host.id==="v-wall")}
-  function onClick(e){const sc=e.target.closest("[data-dscene]"),ac=e.target.closest("[data-dact]");
+  function onClick(e){const hx=e.target.closest("[data-dhx]"),hl=e.target.closest("[data-dhl]");
+    if(hx){const[dm,sv,id]=hx.dataset.dhx.split(":");Smart.call(dm,sv,id);hx.classList.add("on");return}
+    if(hl){if(hl.dataset.st==="locked"&&!hl.dataset.armed){hl.dataset.armed="1";const c=hl.parentElement.querySelector(".d-cap");if(c)c.textContent="Tryck igen för att låsa upp";setTimeout(()=>{if(hl.isConnected){delete hl.dataset.armed;paint()}},4000);return}
+      Smart.call("lock",hl.dataset.st==="locked"?"unlock":"lock",hl.dataset.dhl);return}
+    const sc=e.target.closest("[data-dscene]"),ac=e.target.closest("[data-dact]");
     if(sc){Smart.runScene(sc.dataset.dscene);paint();return}
     if(ac){const S=Smart.dev(),a=ac.dataset.dact;
       if(a==="lock")S.lock=!S.lock;
@@ -2882,7 +2977,7 @@ const Dash=(function(){
   let timer=0;
   function show(el){host=el;paint();[1200,3500,8000].forEach(ms=>setTimeout(paint,ms));clearInterval(timer);timer=setInterval(()=>{if(!host||host.hidden){clearInterval(timer);return}
     const c=host.querySelector("[data-dclock]"),d=new Date();if(c)c.textContent=pad(d.getHours())+":"+pad(d.getMinutes());if(d.getSeconds()<15)paint()},15000)}
-  return{show};
+  return{show,repaint:paint};
 })();
 
 /* meny: sidomeny på iPad och dator, flikrad på telefonen */
