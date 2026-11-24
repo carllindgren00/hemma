@@ -2631,7 +2631,7 @@ const Smart=(function(){
   function haLoad(){if(!live())return;haCall("/api/states").then(s=>{haStates=s;haErr=""}).catch(e=>{haErr="Kunde inte nå Home Assistant ("+e.message+"). Kolla adressen och nyckeln."}).finally(render)}
 
   // --- Home Assistant live via WebSocket ---
-  let ws=null,wsId=1,wsState="off",wsMsg="",haMap={},areas={},devArea={},entReg={},pend={},rTimer=0,retry=0,edit=false;
+  let diag="",probe="",ws=null,wsId=1,wsState="off",wsMsg="",haMap={},areas={},devArea={},entReg={},pend={},rTimer=0,retry=0,edit=false;
   let hidden=new Set(store.get("ha-hidden",[]));const saveHidden=()=>store.set("ha-hidden",[...hidden]);
   const base=()=>HA.url.trim().replace(/\/+$/,"");
   function send(o){return new Promise((ok,no)=>{if(!ws||ws.readyState!==1)return no(new Error("Inte ansluten till Home Assistant"));const id=wsId++;o.id=id;pend[id]={ok,no};ws.send(JSON.stringify(o))})}
@@ -2641,9 +2641,9 @@ const Smart=(function(){
     if(location.protocol==="https:"&&/^http:/i.test(base())){wsState="err";wsMsg="Adressen måste börja med https:// när Hemma öppnas från webben. Använd Tailscale-adressen som slutar på .ts.net.";render();return}
     if(retry<3){wsState="busy";wsMsg=""}
     let sk;try{sk=new WebSocket(base().replace(/^http/i,"ws")+"/api/websocket")}catch(e){wsState="err";wsMsg="Adressen ser inte rätt ut.";render();return}
-    ws=sk;
+    ws=sk;let opened=false,gotReq=false;sk.onopen=()=>{opened=true};
     sk.onmessage=ev=>{let m;try{m=JSON.parse(ev.data)}catch(e){return}
-      if(m.type==="auth_required"){sk.send(JSON.stringify({type:"auth",access_token:HA.token}));return}
+      if(m.type==="auth_required"){gotReq=true;sk.send(JSON.stringify({type:"auth",access_token:HA.token}));return}
       if(m.type==="auth_invalid"){retry=99;wsState="err";wsMsg="Nyckeln godtogs inte. Skapa en ny långlivad åtkomsttoken i Home Assistant och klistra in den.";try{sk.close()}catch(e){}render();return}
       if(m.type==="auth_ok"){retry=0;
         Promise.all([send({type:"get_states"}),send({type:"config/area_registry/list"}),send({type:"config/device_registry/list"}),send({type:"config/entity_registry/list"})]).then(([st,ar,dv,en])=>{
@@ -2652,8 +2652,9 @@ const Smart=(function(){
         send({type:"subscribe_events",event_type:"state_changed"}).catch(()=>{});return}
       if(m.type==="event"&&m.event&&m.event.data){const d=m.event.data;if(d.new_state)haMap[d.entity_id]=d.new_state;else delete haMap[d.entity_id];soon();return}
       if(m.type==="result"&&pend[m.id]){const q=pend[m.id];delete pend[m.id];m.success?q.ok(m.result):q.no(new Error((m.error&&m.error.message)||"Home Assistant svarade med ett fel"))}};
-    sk.onclose=()=>{if(ws!==sk)return;ws=null;Object.values(pend).forEach(q=>q.no(new Error("Anslutningen bröts")));pend={};if(retry>=99)return;retry++;
-      if(retry>=3){wsState="err";wsMsg="Når inte Home Assistant på "+base()+". Är Tailscale påslaget i den här enheten, och stämmer adressen?"}else wsState="busy";
+    sk.onclose=ev=>{if(ws!==sk)return;ws=null;diag=`WebSocket ${opened?"öppnades":"öppnades aldrig"}${gotReq?", fick svar":""}, kod ${ev&&ev.code||"?"}`;Object.values(pend).forEach(q=>q.no(new Error("Anslutningen bröts")));pend={};if(retry>=99)return;retry++;
+      if(retry>=3){wsState="err";wsMsg="Når inte Home Assistant på "+base()+". Är Tailscale påslaget i den här enheten, och stämmer adressen?";
+        fetch(base()+"/api/",{mode:"no-cors",cache:"no-store"}).then(()=>{probe="Servern nås från den här sidan"}).catch(()=>{probe="Servern nås inte från den här sidan"}).finally(()=>{if(!$("#v-smart").hidden)paintBody()})}else wsState="busy";
       render();if(typeof Dash!=="undefined")Dash.repaint();setTimeout(()=>{if(!ws&&live())haConnect()},Math.min(30000,2000*retry))};
   }
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&live()&&!ws){retry=Math.min(retry,2);haConnect()}});
@@ -2683,7 +2684,7 @@ const Smart=(function(){
     if(dm==="alarm_control_panel"){return tile(cls("alarm"),top()+nmh+`<small>${ALM[st]||esc(st)}</small>`)}
     return tile(cls(""),top()+nmh+`<small>${esc(st)}</small>`)}
   function haBody(){
-    if(wsState!=="ok")return `<div class="card pad">${wsState==="err"?`<p class="note warn">${esc(wsMsg)}</p><div class="acts" style="margin-top:10px"><button class="btn" id="ha-retry">Försök igen</button><button class="btn" id="ha-open">Ändra adress eller nyckel</button></div>`:note("Ansluter till Home Assistant …")}</div>`;
+    if(wsState!=="ok")return `<div class="card pad">${wsState==="err"?`<p class="note warn">${esc(wsMsg)}</p>${diag||probe?`<p class="note" style="font-family:ui-monospace,Menlo,monospace;font-size:.8rem">Felsökning: ${esc([probe,diag,navigator.standalone?"hemskärmsapp":"webbläsare"].filter(Boolean).join(" · "))}</p>`:""}<div class="acts" style="margin-top:10px"><button class="btn" id="ha-retry">Försök igen</button><button class="btn" id="ha-open">Ändra adress eller nyckel</button></div>`:note("Ansluter till Home Assistant …")}</div>`;
     const all=ents(),vis=all.filter(x=>edit||!hidden.has(x.entity_id)).sort((p,q)=>ORDER(p.entity_id.split(".")[0])-ORDER(q.entity_id.split(".")[0])||nm(p).localeCompare(nm(q),"sv"));
     const sc=vis.filter(x=>/^(scene|script)\./.test(x.entity_id)),rest=vis.filter(x=>!/^(scene|script)\./.test(x.entity_id)),g={};
     rest.forEach(x=>{const k=areaOf(x.entity_id);(g[k]=g[k]||[]).push(x)});
