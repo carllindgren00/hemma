@@ -623,7 +623,7 @@ button.d-tile{cursor:pointer}button.d-tile:hover{background:var(--surface-2)}
 .d-demo{grid-column:1/-1;text-align:center;font-size:.75rem;color:var(--muted);letter-spacing:.04em;margin:4px 0 0}
 
 /* väggvyn */
-.wl{position:fixed;inset:0;overflow:auto;z-index:5;color:#fff;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-areas:"hero side" "strip strip";grid-template-rows:minmax(0,1fr) auto;gap:18px;
+.wl{position:fixed;inset:0;overflow:auto;z-index:5;color:#fff;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-areas:"hero side" "strip strip";grid-template-rows:1fr auto;gap:16px;min-height:100dvh;box-sizing:border-box;
   padding-block:max(22px,env(safe-area-inset-top,0px)) max(18px,env(safe-area-inset-bottom,0px));padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px));
   background:var(--wl-bg);transition:background 2s;font-family:var(--f-ui);color-scheme:dark}
 .wl.dawn{--wl-bg:linear-gradient(160deg,#f3a37c 0%,#c97b9b 38%,#5b6fc4 100%)}
@@ -634,12 +634,12 @@ button.d-tile{cursor:pointer}button.d-tile:hover{background:var(--surface-2)}
 .wl-hero{grid-area:hero;display:flex;flex-direction:column;gap:6px;min-width:0}
 .wl-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .wl-greet{font:600 1.05rem var(--f-display);letter-spacing:.02em;opacity:.85}
-.wl-time{font:200 clamp(6rem,15vw,11.5rem)/.88 var(--f-display);letter-spacing:-.04em;font-variant-numeric:tabular-nums;margin-top:6px}
-.wl-date{font-size:1.15rem;font-weight:500;opacity:.85;margin-bottom:18px}
+.wl-time{font:200 clamp(4.5rem,min(15vw,25vh),12rem)/.88 var(--f-display);letter-spacing:-.04em;font-variant-numeric:tabular-nums;margin-top:6px}
+.wl-date{font-size:1.15rem;font-weight:500;opacity:.85;margin-bottom:clamp(8px,2vh,18px)}
 .wl-date::first-letter{text-transform:uppercase}
 .wl-wx{display:flex;align-items:center;gap:18px}.wl-wx>div{display:flex;flex-direction:column;gap:4px;min-width:0}
-.wl-art{width:118px;height:102px;flex:none;filter:drop-shadow(0 6px 14px rgba(0,0,0,.18))}
-.wl-temp{font:300 4.2rem/1 var(--f-display);letter-spacing:-.03em}
+.wl-art{width:clamp(100px,13vh,150px);height:auto;aspect-ratio:120/104;flex:none;filter:drop-shadow(0 6px 14px rgba(0,0,0,.18))}
+.wl-temp{font:300 clamp(3.6rem,9vh,5.2rem)/1 var(--f-display);letter-spacing:-.03em}
 .wl-sub{font-size:1rem;opacity:.9;margin:0}.wl-sub.dim{opacity:.65}
 .wl-chips{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}.wl-dagis{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:20px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);align-self:flex-start;max-width:100%}
 .wl-dagis .ico{width:34px;height:34px;flex:none}.wl-dagis div{display:flex;flex-direction:column;gap:2px}.wl-dagis b{font:700 1.3rem/1.2 var(--f-display);max-width:28ch}
@@ -668,7 +668,7 @@ button.wl-card{cursor:pointer}button.wl-card:active{transform:scale(.98)}
 .wl-pill:active{background:rgba(255,255,255,.3)}
 .wl-bars{display:flex;align-items:flex-end;gap:2px;height:26px;width:100%}.wl-bars i{flex:1;background:rgba(255,255,255,.3);border-radius:2px;min-height:3px}.wl-bars i.cheap{background:#7ff0c1}.wl-bars i.now{background:#fff}
 .wl-ort{display:flex;gap:8px;max-width:420px}.wl .wl-ort input{flex:1;min-width:0;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:999px;padding:10px 16px;font:inherit}.wl-ort input::placeholder{color:rgba(255,255,255,.7)}
-.wl-strip{grid-area:strip;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.wl-strip{grid-area:strip;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;align-self:end}.wl-today{display:flex;flex-direction:column;gap:14px}.wl-day{display:flex;gap:12px;align-items:flex-start}.wl-day .ico{width:28px;height:28px;flex:none;margin-top:12px}.wl-day div{display:flex;flex-direction:column;gap:2px;min-width:0}.wl-day b{font:700 1.2rem/1.3 var(--f-display);overflow-wrap:anywhere}
 .wl-panel{display:flex;flex-direction:column;gap:10px}
 .wl-cd{display:flex;align-items:baseline;gap:10px}.wl-cd b{font:300 2rem/1 var(--f-display);min-width:2ch}
 .wl-row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:.95rem}.wl-row small{opacity:.7}
@@ -679,6 +679,7 @@ button.wl-card{cursor:pointer}button.wl-card:active{transform:scale(.98)}
 .wl-demo{grid-column:1/-1;text-align:center;font-size:.75rem;opacity:.6;margin:0}
 @media (max-aspect-ratio:1/1),(max-width:760px){.wl{grid-template-columns:minmax(0,1fr);grid-template-areas:"hero" "side" "strip";grid-template-rows:auto auto auto}.wl-time{font-size:clamp(5.5rem,24vw,10rem)}}
 @media (max-width:760px){.wl-strip{grid-template-columns:minmax(0,1fr)}}
+@media (max-aspect-ratio:1/1) and (min-width:761px){.wl-strip{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .dash.wall{min-height:calc(100vh - 40px)}
 .dash.wall .d-clock{min-height:180px}.dash.wall .d-tile{min-height:132px;gap:8px}.dash.wall .d-panel{min-height:120px}.dash.wall .d-time{font-size:clamp(4rem,10vw,7.5rem)}
 @media (max-width:760px){.dash{grid-template-columns:repeat(2,minmax(0,1fr))}.d-tile{min-height:150px}.d-clock .d-exit{position:static;order:3;margin-top:4px}}
@@ -2763,9 +2764,15 @@ const Smart=(function(){
     return{scenes:by("scene").concat(by("script")).slice(0,4).map(x=>({id:x.entity_id,name:nm(x)})),lock:by("lock")[0]||null,climate:by("climate").find(x=>x.attributes.current_temperature!=null)||null,
       vac:by("vacuum")[0]||null,lunch:lunchOf(),cams:by("camera").length,lightsOn:by("light").filter(x=>x.state==="on").length,lights:by("light").length}}
   // förskolans mat via Skolmat-integrationen i Home Assistant
+  let LT={key:"",text:"",at:0};
+  function lunchFetch(tk){const cal=Object.keys(entReg).find(id=>id.startsWith("calendar.")&&entReg[id].platform==="skolmat");if(!cal||!ws||ws.readyState!==1)return;
+    if(LT.key===tk&&Date.now()-LT.at<30*6e4)return;LT.at=Date.now();
+    send({type:"call_service",domain:"calendar",service:"get_events",target:{entity_id:cal},service_data:{start_date_time:tk+" 00:00:00",end_date_time:tk+" 23:59:00"},return_response:true}).then(r=>{
+      const ev=((r&&r.response&&r.response[cal])||{}).events||[];const txt=ev.map(e=>e.summary||"").filter(Boolean).join(" · ").replace(/\s*\|\s*/g," · ");
+      const ch=LT.key!==tk||LT.text!==txt;LT={key:tk,text:txt,at:Date.now()};if(ch&&typeof Dash!=="undefined")Dash.repaint()}).catch(()=>{})}
   function lunchOf(){const s=Object.values(haMap).find(x=>{const r=entReg[x.entity_id];return x.entity_id.startsWith("sensor.")&&r&&r.platform==="skolmat"});if(!s)return null;
     const clean=v=>Array.isArray(v)?v.map(c=>typeof c==="string"?c:c&&(c.name||c.course||c.title||c.summary)||"").filter(Boolean).join(" · "):typeof v==="string"?v:"";
-    const t=new Date();t.setDate(t.getDate()+1);const tk=isoD(t);let tom="";
+    const t=new Date();t.setDate(t.getDate()+1);const tk=isoD(t);let tom=LT.key===tk?LT.text:"";lunchFetch(tk);
     (function walk(o,d){if(tom||!o||typeof o!=="object"||d>5)return;for(const k in o){if(String(k).startsWith(tk)){tom=clean(o[k]).replace(/\s*\|\s*/g," · ");if(tom)return}const v=o[k];if(v&&typeof v==="object"&&!Array.isArray(v)&&String(v.date||"").startsWith(tk)){tom=clean(v.courses||v.menu||v.items||v.dishes);if(tom)return}walk(v,d+1)}})(s.attributes,0);
     const st=String(s.state||"").trim().replace(/\s*\|\s*/g," · ");return{name:nm(s),today:/^(unknown|unavailable|none)?$/i.test(st)?"":st,tomorrow:tom}}
   function setCams(on){D.cams.forEach(c=>c.on=on)}
@@ -3045,12 +3052,12 @@ const Dash=(function(){
       el=`<button class="wl-card wl-mini" data-go="smart"><span class="wl-lbl">Elpris nu</span><b class="wl-num">${Math.round(eh[h])}<small> öre</small></b><span class="wl-bars">${eh.map((x,i)=>`<i class="${i===h?"now":c&&i>=c.i&&i<c.i+3?"cheap":""}" style="height:${x==null?0:Math.max(10,(x-mn)/((mx-mn)||1)*100)}%"></i>`).join("")}</span>${c?`<span class="d-cap">Billigast ${pad(c.i)}–${pad(c.i+3)}</span>`:""}</button>`}
     // förskolans lunch
     const lu=L&&L.lunch,late=h>=14||!(lu&&lu.today);
-    const lunchCard=lu&&(lu.today||lu.tomorrow)?`<div class="wl-dagis">${ico("food")}<div><span class="wl-lbl">${late&&lu.tomorrow?"Lunch imorgon":"Lunch idag"}</span><b>${esc(late&&lu.tomorrow?lu.tomorrow:lu.today)}</b></div></div>`:"";
+    const lunchRow=lu&&(lu.today||lu.tomorrow)?`<div class="wl-day">${ico("food")}<div><span class="wl-lbl">${late&&lu.tomorrow?"Lunch imorgon":"Lunch idag"}</span><b>${esc(late&&lu.tomorrow?lu.tomorrow:lu.today)}</b></div></div>`:"";
+    const dagisRow=w?`<div class="wl-day">${ico("hanger")}<div><span class="wl-lbl">Kläder till dagis</span><b>${esc(dagis(w))}</b></div></div>`:"";
     // väder
     const weather=!o?`<form class="wl-ort" data-ortform><input name="ort" placeholder="Skriv in er ort för väder" aria-label="Din ort" autocomplete="address-level2"><button class="wl-pill">Spara</button></form>`
-      :!w?`<p class="wl-sub">Hämtar vädret för ${esc(o)} …</p>${lunchCard?`<div class="wl-chips">${lunchCard}</div>`:""}`
-      :`<div class="wl-wx">${wxArt(w.code,ph==="night")}<div><b class="wl-temp">${Math.round(w.now)}°</b><span class="wl-sub">${esc(WX_TXT(w.code))} · ${Math.round(w.min)}° till ${Math.round(w.max)}°${w.rain?` · ${w.rain} % nederbörd`:""}</span><span class="wl-sub dim">${esc(w.place||o)}${w.set?` · solen går ner ${esc(w.set)}`:""}</span></div></div>
-        <div class="wl-chips"><div class="wl-dagis">${ico("hanger")}<div><span class="wl-lbl">Dagis idag</span><b>${esc(dagis(w))}</b></div></div>${lunchCard}</div>`;
+      :!w?`<p class="wl-sub">Hämtar vädret för ${esc(o)} …</p>`
+      :`<div class="wl-wx">${wxArt(w.code,ph==="night")}<div><b class="wl-temp">${Math.round(w.now)}°</b><span class="wl-sub">${esc(WX_TXT(w.code))} · ${Math.round(w.min)}° till ${Math.round(w.max)}°${w.rain?` · ${w.rain} % nederbörd`:""}</span><span class="wl-sub dim">${esc(w.place||o)}${w.set?` · solen går ner ${esc(w.set)}`:""}</span></div></div>`;
     const panel=(t,body)=>`<div class="wl-card wl-panel"><span class="wl-lbl">${t}</span>${body}</div>`;
     return `<div class="wl ${ph}">
       <div class="wl-hero">
@@ -3059,7 +3066,7 @@ const Dash=(function(){
         <span class="wl-date">${esc(d.toLocaleDateString("sv-SE",{weekday:"long",day:"numeric",month:"long"}))}</span>
         ${weather}
       </div>
-      <div class="wl-side">${door}${leaveBtn}${scenes}<div class="wl-minis">${lights}${inne}${el}</div></div>
+      <div class="wl-side">${door}${leaveBtn}${scenes}<div class="wl-minis">${lights}${inne}${el}</div>${dagisRow||lunchRow?`<div class="wl-card wl-today">${dagisRow}${lunchRow}</div>`:""}</div>
       <div class="wl-strip">
         ${panel("Snart",cds.map(x=>`<div class="wl-cd"><b>${x.days}</b><span>${x.days===1?"dag":"dagar"} till ${esc(x.name.toLowerCase())}</span></div>`).join("")||`<p class="wl-sub dim">Inget inlagt</p>`)}
         ${panel("Att göra",td.map(x=>`<div class="wl-row"><span>${esc(x.what)} <small>${esc(x.sub)}</small></span><span class="d-rr"><span class="st ${x.state}">${esc(x.when)}</span><button class="delq" data-dtdrop="${x.key}" aria-label="Ta bort påminnelsen" title="Ta bort">${ico("trash")}</button></span></div>`).join("")||`<p class="wl-sub dim">Inget som brådskar</p>`)}
