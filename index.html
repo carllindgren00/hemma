@@ -496,7 +496,7 @@ body.locked>*:not(#gate):not(#snack):not(script){display:none!important}
 .bitem.ex .bi-n b{font-style:italic;color:var(--muted)}
 .bi-a{display:flex;flex-direction:column;align-items:flex-end;gap:2px;white-space:nowrap}.bi-a b{font-variant-numeric:tabular-nums}
 .bi-e{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;color:var(--muted)}.bitem:hover .bi-e{color:var(--accent);background:var(--surface)}
-.bitem-w{display:flex;gap:8px;align-items:stretch}.bitem-w>.bitem{flex:1;min-width:0;text-decoration:none;color:inherit}
+.bitem-w{display:flex;gap:8px;align-items:stretch}.bitem-w>.bitem,.bitem-w>.icard{flex:1;min-width:0;text-decoration:none;color:inherit}
 .bhacc{flex:0 0 auto;max-width:140px}
 .delq{flex:none;display:grid;place-items:center;min-width:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);cursor:pointer;font:600 .8rem var(--f-ui);padding:0 10px}
 .delq .ico{width:18px;height:18px}.delq:hover{color:var(--danger);border-color:var(--danger)}
@@ -607,7 +607,7 @@ button.d-tile{cursor:pointer}button.d-tile:hover{background:var(--surface-2)}
 .d-time{font:200 clamp(4.5rem,13vw,9rem)/.9 var(--f-display);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .d-date{font-size:.8rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .d-exit{position:absolute;top:12px;right:12px}
-.d-wide{grid-column:span 2}
+.d-wide{grid-column:span 2}.d-lunch{display:flex;align-items:center;gap:8px;font-size:.95rem;color:var(--muted)}.d-lunch .ico{width:18px;height:18px;flex:none}
 .d-circ{width:64px;height:64px;border-radius:50%;border:2px solid var(--ring);background:transparent;display:grid;place-items:center;padding:0;cursor:pointer;color:var(--fg);transition:background .2s,border-color .2s,color .2s}
 .d-circ .ico{width:24px;height:24px}
 .d-circ.warn{border-color:var(--warn);color:var(--warn)}.d-circ.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
@@ -619,8 +619,66 @@ button.d-tile{cursor:pointer}button.d-tile:hover{background:var(--surface-2)}
 .d-panels{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
 .d-panel{background:var(--surface);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0;min-height:150px}
 .d-cd{display:flex;align-items:baseline;gap:10px}.d-cd b{font:300 2.2rem/1 var(--f-display);color:var(--accent);min-width:2ch}
-.d-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:.95rem}.d-row small{color:var(--muted)}
+.d-rr{display:flex;align-items:center;gap:8px;flex:none}.d-rr .delq{min-height:34px;min-width:38px;padding:0 8px}.d-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:.95rem}.d-row small{color:var(--muted)}
 .d-demo{grid-column:1/-1;text-align:center;font-size:.75rem;color:var(--muted);letter-spacing:.04em;margin:4px 0 0}
+
+/* väggvyn */
+.wl{position:fixed;inset:0;overflow:auto;z-index:5;color:#fff;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-areas:"hero side" "strip strip";grid-template-rows:minmax(0,1fr) auto;gap:18px;
+  padding-block:max(22px,env(safe-area-inset-top,0px)) max(18px,env(safe-area-inset-bottom,0px));padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px));
+  background:var(--wl-bg);transition:background 2s;font-family:var(--f-ui);color-scheme:dark}
+.wl.dawn{--wl-bg:linear-gradient(160deg,#f3a37c 0%,#c97b9b 38%,#5b6fc4 100%)}
+.wl.day{--wl-bg:linear-gradient(160deg,#3f8fdb 0%,#2f7fc4 40%,#1f9f9a 100%)}
+.wl.dusk{--wl-bg:linear-gradient(160deg,#2b2a63 0%,#57407e 45%,#b45e78 100%)}
+.wl.night{--wl-bg:linear-gradient(160deg,#060b1c 0%,#0e1733 55%,#18204a 100%)}
+.wl.night .wl-strip{opacity:.7}.wl.night .wl-leave{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.22);box-shadow:none}
+.wl-hero{grid-area:hero;display:flex;flex-direction:column;gap:6px;min-width:0}
+.wl-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.wl-greet{font:600 1.05rem var(--f-display);letter-spacing:.02em;opacity:.85}
+.wl-time{font:200 clamp(6rem,15vw,11.5rem)/.88 var(--f-display);letter-spacing:-.04em;font-variant-numeric:tabular-nums;margin-top:6px}
+.wl-date{font-size:1.15rem;font-weight:500;opacity:.85;margin-bottom:18px}
+.wl-date::first-letter{text-transform:uppercase}
+.wl-wx{display:flex;align-items:center;gap:18px}.wl-wx>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.wl-art{width:118px;height:102px;flex:none;filter:drop-shadow(0 6px 14px rgba(0,0,0,.18))}
+.wl-temp{font:300 4.2rem/1 var(--f-display);letter-spacing:-.03em}
+.wl-sub{font-size:1rem;opacity:.9;margin:0}.wl-sub.dim{opacity:.65}
+.wl-chips{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}.wl-dagis{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:20px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);align-self:flex-start;max-width:100%}
+.wl-dagis .ico{width:34px;height:34px;flex:none}.wl-dagis div{display:flex;flex-direction:column;gap:2px}.wl-dagis b{font:700 1.3rem/1.2 var(--f-display);max-width:28ch}
+.wl-lbl{font-size:.74rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.75}
+.wl-card{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);border-radius:22px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding:18px;color:#fff;font:inherit;text-align:left;min-width:0}
+button.wl-card{cursor:pointer}button.wl-card:active{transform:scale(.98)}
+.wl-side{grid-area:side;display:flex;flex-direction:column;gap:14px;min-width:0}
+.wl-door{display:flex;align-items:center;gap:18px;padding:20px}
+.wl-door>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.wl-dbtn{width:78px;height:78px;border-radius:50%;flex:none;display:grid;place-items:center;border:0;cursor:pointer;color:#fff;transition:background .3s}
+.wl-dbtn .ico{width:32px;height:32px}
+.wl-door.ok .wl-dbtn{background:#2fbf71;box-shadow:0 0 0 6px rgba(47,191,113,.25)}
+.wl-door.warn .wl-dbtn{background:#f0a23a;box-shadow:0 0 0 6px rgba(240,162,58,.3)}
+.wl-dst{font:700 2rem/1.1 var(--f-display)}
+.wl .d-cap{color:#fff;opacity:.75;font-size:.72rem}
+.wl-leave{display:flex;align-items:center;gap:16px;padding:18px 22px;border-radius:22px;border:0;background:#fff;color:#14213d;cursor:pointer;text-align:left;font:inherit;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.wl-leave .ico{width:28px;height:28px;flex:none}.wl-leave span{display:flex;flex-direction:column;gap:2px}.wl-leave b{font:700 1.3rem var(--f-display)}.wl-leave small{opacity:.7;font-size:.9rem}
+.wl-leave:active,.wl-sc:active,.wl-dbtn:active{transform:scale(.97)}
+.wl-scenes{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.wl-sc{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 8px;border-radius:20px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.12);color:#fff;cursor:pointer;font:600 .95rem var(--f-ui);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.wl-sc .ico{width:26px;height:26px}.wl-sc.on{background:#fff;color:#14213d}
+.wl-minis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.wl-mini{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.wl-num{font:300 2.4rem/1 var(--f-display);letter-spacing:-.02em}.wl-num small{font:500 .85rem var(--f-ui);opacity:.75;letter-spacing:0}
+.wl-pill{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.18);color:#fff;border-radius:999px;padding:8px 16px;font:600 .88rem var(--f-ui);cursor:pointer}
+.wl-pill:active{background:rgba(255,255,255,.3)}
+.wl-bars{display:flex;align-items:flex-end;gap:2px;height:26px;width:100%}.wl-bars i{flex:1;background:rgba(255,255,255,.3);border-radius:2px;min-height:3px}.wl-bars i.cheap{background:#7ff0c1}.wl-bars i.now{background:#fff}
+.wl-ort{display:flex;gap:8px;max-width:420px}.wl .wl-ort input{flex:1;min-width:0;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:999px;padding:10px 16px;font:inherit}.wl-ort input::placeholder{color:rgba(255,255,255,.7)}
+.wl-strip{grid-area:strip;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.wl-panel{display:flex;flex-direction:column;gap:10px}
+.wl-cd{display:flex;align-items:baseline;gap:10px}.wl-cd b{font:300 2rem/1 var(--f-display);min-width:2ch}
+.wl-row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:.95rem}.wl-row small{opacity:.7}
+.wl .st{color:#fff}.wl .st.late{color:#ffb3a8}.wl .st.soon{color:#ffe08a}
+.wl .delq{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.25);color:#fff}.wl .delq.armed{background:#e5484d;border-color:#e5484d}
+.wl-shop{margin:0;font-size:1rem;line-height:1.5}
+.wl-panel .wl-pill{align-self:flex-start;margin-top:auto}
+.wl-demo{grid-column:1/-1;text-align:center;font-size:.75rem;opacity:.6;margin:0}
+@media (max-aspect-ratio:1/1),(max-width:760px){.wl{grid-template-columns:minmax(0,1fr);grid-template-areas:"hero" "side" "strip";grid-template-rows:auto auto auto}.wl-time{font-size:clamp(5.5rem,24vw,10rem)}}
+@media (max-width:760px){.wl-strip{grid-template-columns:minmax(0,1fr)}}
 .dash.wall{min-height:calc(100vh - 40px)}
 .dash.wall .d-clock{min-height:180px}.dash.wall .d-tile{min-height:132px;gap:8px}.dash.wall .d-panel{min-height:120px}.dash.wall .d-time{font-size:clamp(4rem,10vw,7.5rem)}
 @media (max-width:760px){.dash{grid-template-columns:repeat(2,minmax(0,1fr))}.d-tile{min-height:150px}.d-clock .d-exit{position:static;order:3;margin-top:4px}}
@@ -826,6 +884,7 @@ const newSeed=()=>Math.floor(Math.random()*1e9)+1;
 const PXMM=8;
 
 const I={
+  food:'<path d="M7 3v18M4.5 3v4.5a2.5 2.5 0 0 0 5 0V3"/><path d="M18 21V3c-2 0-3.5 2.5-3.5 6s1.5 4 3.5 4"/>',
  printer:'<path d="M7 8V3h10v5"/><rect x="3" y="8" width="18" height="9" rx="2"/><path d="M7 14h10v7H7z"/>',
  car:'<path d="M5 16v-5l2-5h10l2 5v5"/><path d="M3 11h18v6H3z"/><path d="M6 17v2M18 17v2"/><circle cx="7.5" cy="14" r=".8"/><circle cx="16.5" cy="14" r=".8"/>',
  bulb:'<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/>',
@@ -1650,9 +1709,14 @@ const Garage=(function(){
     const dl=r.days!=null&&r.days<0,ml=r.left!=null&&r.left<0;if(r.days!=null&&(!late||dl))parts.push(dl?`${-r.days} dagar för sent`:daysTxt(r.days));if(r.left!=null&&(!late||ml))parts.push(ml?`${qtyF(-r.left)} ${u} över`:`${qtyF(r.left)} ${u} kvar`);
     r.when=parts.join(" eller ");r.short=(late?"Service försenad":soon?"Service snart":"Nästa service")+(r.when?" · "+r.when:"");return r}
   function todos(){const out=[];G.items.forEach(it=>{const s=svcStatus(it),h=isHouse(it);
-      if(s&&s.state!=="ok"){const unk=s.state==="unk";out.push({it,kind:"svc",what:h?it.name:"Service",sub:h?it.type:it.name,when:unk?"inte gjort än":s.when,state:unk?"soon":s.state,sort:unk?20:s.state==="late"?-999:(s.days!=null?s.days:15)})}
-      it.dates.forEach(d=>{if(!d.date)return;const dd=dayDiff(d.date);if(dd<=30)out.push({it,kind:"date",d,what:d.what||"Datum",sub:it.name,when:daysTxt(dd),state:dd<0?"late":"soon",sort:dd})})});
+      if(s&&s.state!=="ok"){const unk=s.state==="unk";out.push({it,key:it.id+"|svc|",kind:"svc",what:h?it.name:"Service",sub:h?it.type:it.name,when:unk?"inte gjort än":s.when,state:unk?"soon":s.state,sort:unk?20:s.state==="late"?-999:(s.days!=null?s.days:15)})}
+      it.dates.forEach(d=>{if(!d.date)return;const dd=dayDiff(d.date);if(dd<=30)out.push({it,key:it.id+"|date|"+d.id,kind:"date",d,what:d.what||"Datum",sub:it.name,when:daysTxt(dd),state:dd<0?"late":"soon",sort:dd})})});
     return out.sort((a,b)=>a.sort-b.sort)}
+  function dropTodo(key){const[iid,kind,did]=String(key).split("|"),it=G.items.find(i=>i.id===iid);if(!it)return;
+    if(kind==="date")it.dates=it.dates.filter(x=>x.id!==did);
+    else if(isHouse(it))G.items=G.items.filter(i=>i!==it);
+    else it.svc={months:"",meter:""};
+    save();if(!$("#v-garage").hidden){renderList();renderOut(false)}}
   function quickDone(it,dateId){if(dateId){const d=it.dates.find(x=>x.id===dateId);if(d&&d.yearly)d.date=addMonths(d.date||today(),12);else it.dates=it.dates.filter(x=>x.id!==dateId)}
     else it.entries.push({id:uid(),date:today(),cat:"service",what:isHouse(it)?"Gjort":"Service",desc:"",meter:"",costs:[]});save()}
   function tireWarn(t){const ds=POS.map(p=>t.d&&has(t.d[p[0]])?num(t.d[p[0]]):null).filter(x=>x!=null);if(!ds.length)return"Fyll i mönsterdjupet i mm för varje däck.";
@@ -1701,7 +1765,7 @@ const Garage=(function(){
     const s=summary();$("#g-sum").textContent=s.n?`${plural(s.n,"sak","saker")} · totalt ${money(s.tot)}`:"Inga saker ännu";
     const td=todos();
     $("#g-todo").innerHTML=td.length?`<div class="card pad"><h3 class="eyebrow">Att göra snart</h3><div class="list" style="gap:8px">${td.map(t=>
-      `<div class="trow"><button class="tlink" data-go="g-${t.it.id}"><b>${esc(t.what)}</b><small>${esc(t.sub)}</small></button><span class="st ${t.state}">${esc(t.when)}</span><button class="btn sm" data-done="${t.it.id}"${t.kind==="date"?` data-date="${t.d.id}"`:""}>Klart</button></div>`).join("")}</div></div>`:"";
+      `<div class="trow"><button class="tlink" data-go="g-${t.it.id}"><b>${esc(t.what)}</b><small>${esc(t.sub)}</small></button><span class="st ${t.state}">${esc(t.when)}</span><button class="delq" data-tdrop="${t.key}" aria-label="Ta bort påminnelsen" title="Ta bort">${ico("trash")}</button><button class="btn sm" data-done="${t.it.id}"${t.kind==="date"?` data-date="${t.d.id}"`:""}>Klart</button></div>`).join("")}</div></div>`:"";
     const box=$("#g-items");
     box.innerHTML="";if(!G.items.length)box.innerHTML=`<div class="card pad empty"><h3>Lägg in din första sak</h3><p class="note">Till exempel bilen, gräsklipparen eller snöslungan. Sedan loggar du vad du har gjort och vad det kostade.</p></div>`;
     const icard=it=>{const last=sorted(it)[0],st=svcStatus(it);
@@ -1711,11 +1775,12 @@ const Garage=(function(){
     const veh=G.items.filter(i=>!isHouse(i)),hus=G.items.filter(isHouse),tpl=HOUSE_T.filter(t=>!G.items.some(i=>i.name===t[0]));
     const every=m=>m===1?"varje månad":m===12?"varje år":`var ${m}:e månad`;
     box.innerHTML=(G.items.length?"":box.innerHTML)+(veh.length?`<p class="eyebrow">Fordon och maskiner</p>`+veh.map(icard).join(""):"")+
-      `<p class="eyebrow" style="margin-top:10px">Huset</p>`+hus.map(icard).join("")+(tpl.length?`<div class="card pad"><p class="note">${hus.length?"Lägg till fler saker som behöver göras regelbundet.":"Lägg till det som behöver göras regelbundet hemma, så kommer påminnelserna av sig själva."}</p><div class="chips">${tpl.map(t=>`<button class="chip sm" data-tpl="${esc(t[0])}">+ ${esc(t[0])} <small>${every(t[2])}</small></button>`).join("")}</div></div>`:"");
+      `<p class="eyebrow" style="margin-top:10px">Huset</p>`+hus.map(it=>`<div class="bitem-w"><button class="delq" data-tdrop="${it.id}|svc|" aria-label="Ta bort ${esc(it.name)}" title="Ta bort">${ico("trash")}</button>${icard(it)}</div>`).join("")+(tpl.length?`<div class="card pad"><p class="note">${hus.length?"Lägg till fler saker som behöver göras regelbundet.":"Lägg till det som behöver göras regelbundet hemma, så kommer påminnelserna av sig själva."}</p><div class="chips">${tpl.map(t=>`<button class="chip sm" data-tpl="${esc(t[0])}">+ ${esc(t[0])} <small>${every(t[2])}</small></button>`).join("")}</div></div>`:"");
     const ch=chartHTML(G.items,"Kostnader per år, alla saker");$("#g-chart").hidden=!ch;$("#g-chart").innerHTML=ch;
   }
 
-  $("#g-list-view").addEventListener("click",e=>{const d=e.target.closest("[data-done]"),t=e.target.closest("[data-tpl]");
+  $("#g-list-view").addEventListener("click",e=>{const d=e.target.closest("[data-done]"),t=e.target.closest("[data-tpl]"),x=e.target.closest("[data-tdrop]");
+    if(x){if(!x.classList.contains("armed")){x.classList.add("armed");x.textContent="Ta bort?";return}dropTodo(x.dataset.tdrop);return}
     if(d){const it=G.items.find(i=>i.id===d.dataset.done);if(it){quickDone(it,d.dataset.date);renderList();renderOut(false)}}
     if(t){const tp=HOUSE_T.find(x=>x[0]===t.dataset.tpl);if(tp){G.items.push(ensure({id:uid(),name:tp[0],type:tp[1],make:"",reg:"",year:"",unit:"",note:"",entries:[],svc:{months:String(tp[2]),meter:""}}));save();renderList();renderOut(false)}}});
   /* ---- en sak ---- */
@@ -1975,7 +2040,7 @@ const Garage=(function(){
   $("#g-import").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
     r.onload=()=>{try{const x=JSON.parse(r.result);if(!x||!Array.isArray(x.items))throw 0;x.items.forEach(ensure);G=x;save();renderList();renderOut(false);msg(`Inläst: ${plural(G.items.length,"sak","saker")}. Det som fanns innan är ersatt.`)}
       catch(err){msg("Filen gick inte att läsa. Välj en fil som heter hemma-garage-….json.")}e.target.value=""};r.readAsText(f)};
-  return{route,summary,todos,refreshReceipt:()=>{if(!$("#v-garage").hidden)renderOut(false)}};
+  return{route,summary,todos,dropTodo,refreshReceipt:()=>{if(!$("#v-garage").hidden)renderOut(false)}};
 })();
 
 /* ---------- gemensamt: etiketter och utskriftspanel ---------- */
@@ -2696,7 +2761,13 @@ const Smart=(function(){
   function paintBody(){const b=$("#sh-body");if(b)b.innerHTML=live()?haBody():demoHTML()}
   function liveDash(){if(!live()||wsState!=="ok")return null;const all=ents().filter(x=>!hidden.has(x.entity_id)),by=dm=>all.filter(x=>x.entity_id.startsWith(dm+"."));
     return{scenes:by("scene").concat(by("script")).slice(0,4).map(x=>({id:x.entity_id,name:nm(x)})),lock:by("lock")[0]||null,climate:by("climate").find(x=>x.attributes.current_temperature!=null)||null,
-      vac:by("vacuum")[0]||null,cams:by("camera").length,lightsOn:by("light").filter(x=>x.state==="on").length,lights:by("light").length}}
+      vac:by("vacuum")[0]||null,lunch:lunchOf(),cams:by("camera").length,lightsOn:by("light").filter(x=>x.state==="on").length,lights:by("light").length}}
+  // förskolans mat via Skolmat-integrationen i Home Assistant
+  function lunchOf(){const s=Object.values(haMap).find(x=>{const r=entReg[x.entity_id];return x.entity_id.startsWith("sensor.")&&r&&r.platform==="skolmat"});if(!s)return null;
+    const clean=v=>Array.isArray(v)?v.map(c=>typeof c==="string"?c:c&&(c.name||c.course||c.title||c.summary)||"").filter(Boolean).join(" · "):typeof v==="string"?v:"";
+    const t=new Date();t.setDate(t.getDate()+1);const tk=isoD(t);let tom="";
+    (function walk(o,d){if(tom||!o||typeof o!=="object"||d>5)return;for(const k in o){if(String(k).startsWith(tk)){tom=clean(o[k]).replace(/\s*\|\s*/g," · ");if(tom)return}const v=o[k];if(v&&typeof v==="object"&&!Array.isArray(v)&&String(v.date||"").startsWith(tk)){tom=clean(v.courses||v.menu||v.items||v.dishes);if(tom)return}walk(v,d+1)}})(s.attributes,0);
+    const st=String(s.state||"").trim().replace(/\s*\|\s*/g," · ");return{name:nm(s),today:/^(unknown|unavailable|none)?$/i.test(st)?"":st,tomorrow:tom}}
   function setCams(on){D.cams.forEach(c=>c.on=on)}
   function setAlarm(m){D.alarm=m;if(m!=="off")D.lock=true;if(D.camFollow)setCams(m!=="off")}
   const SCENES=[["home","Hemma","house",()=>{setAlarm("off");D.lights.forEach(l=>{if(["Hall","Kök","Vardagsrum"].includes(l.n))l.on=true})}],
@@ -2939,6 +3010,63 @@ const Dash=(function(){
       (L.climate?`<button class="d-tile" data-go="smart"><span class="d-lbl">Inne</span><span class="d-big">${f1(L.climate.attributes.current_temperature)}°</span><span class="d-cap">${esc(L.climate.attributes.friendly_name||"")}</span></button>`:"")+
       (L.cams?`<button class="d-tile" data-go="smart"><span class="d-lbl">Kameror</span>${circ(false,"cam",'tabindex="-1" aria-hidden="true"')}<span class="d-cap">${L.cams} st · visa</span></button>`:"")+
       (L.vac?`<div class="d-tile"><span class="d-lbl">${esc(L.vac.attributes.friendly_name||"Dammsugare")}</span>${circ(run,"robot",`data-dhx="vacuum:${run?"return_to_base":"start"}:${L.vac.entity_id}" aria-label="Starta eller skicka hem dammsugaren"`)}<span class="d-cap${run?" on":""}">${run?"Städar":L.vac.state==="docked"?"Dockad":esc(L.vac.state)}</span></div>`:"")}
+  /* ---- väggvyn för iPaden i hallen ---- */
+  const phase=h=>h>=22||h<5?"night":h<9?"dawn":h<15?"day":"dusk";
+  const greet=h=>h>=5&&h<10?"God morgon":h>=10&&h<12?"God förmiddag":h>=12&&h<18?"God eftermiddag":h>=18&&h<22?"God kväll":"God natt";
+  function wxArt(c,night){
+    const cloud=`<path d="M38 78h50a17 17 0 0 0 0-34 24 24 0 0 0-46-4A19 19 0 0 0 38 78z" fill="rgba(255,255,255,.92)"/>`,
+      sun=night?`<path d="M70 14a26 26 0 1 0 26 34 21 21 0 1 1-26-34z" fill="#ffe7a3"/>`:`<g stroke="#ffd36b" stroke-width="5" stroke-linecap="round">${[0,45,90,135,180,225,270,315].map(a=>{const r=a*Math.PI/180;return `<line x1="${72+Math.cos(r)*27}" y1="${36+Math.sin(r)*27}" x2="${72+Math.cos(r)*35}" y2="${36+Math.sin(r)*35}"/>`}).join("")}</g><circle cx="72" cy="36" r="19" fill="#ffd36b"/>`,
+      rain=`<g stroke="#bfe3ff" stroke-width="5" stroke-linecap="round"><line x1="48" y1="86" x2="44" y2="96"/><line x1="64" y1="86" x2="60" y2="96"/><line x1="80" y1="86" x2="76" y2="96"/></g>`,
+      snow=`<g fill="#fff"><circle cx="46" cy="90" r="4"/><circle cx="63" cy="94" r="4"/><circle cx="80" cy="90" r="4"/></g>`,
+      bolt=`<path d="M64 80l-9 14h9l-5 10 14-17h-9l5-7z" fill="#ffd36b"/>`;
+    const wet=(c>=51&&c<=67)||(c>=80&&c<=82),sn=(c>=71&&c<=77)||c===85||c===86,th=c>=95;
+    return `<svg class="wl-art" viewBox="0 0 120 104" aria-hidden="true">${c<=3?sun:""}${c>=2?cloud:""}${wet?rain:""}${sn?snow:""}${th?bolt:""}</svg>`}
+  function wallHTML(){const L=Smart.liveDash(),d=new Date(),h=d.getHours(),S=Smart.dev(),s=Smart.summary(),o=ort(),w=o?wxFor(o):null,
+      cds=countdowns().slice(0,3),td=Garage.todos().slice(0,3),shop=String((store.get("t-inkop",{})||{}).items||"").split("\n").map(x=>x.trim()).filter(Boolean),
+      f1=v=>String(Math.round(v*10)/10).replace(".",","),ph=phase(h);
+    // dörren
+    let door="";
+    if(L&&L.lock){const lk=L.lock.state==="locked";
+      door=`<div class="wl-card wl-door${lk?" ok":" warn"}"><button class="wl-dbtn" data-dhl="${L.lock.entity_id}" data-st="${L.lock.state}" aria-label="Lås eller lås upp ytterdörren">${ico("lock")}</button><div><span class="wl-lbl">${esc(L.lock.attributes.friendly_name||"Ytterdörren")}</span><b class="wl-dst">${lk?"Låst":"Olåst"}</b><span class="d-cap">${lk?"Tryck två gånger för att låsa upp":"Tryck för att låsa"}</span></div></div>`}
+    else if(!L){door=`<div class="wl-card wl-door${S.lock?" ok":" warn"}"><button class="wl-dbtn" data-dact="lock" aria-label="Lås eller lås upp ytterdörren">${ico("lock")}</button><div><span class="wl-lbl">Ytterdörren</span><b class="wl-dst">${S.lock?"Låst":"Olåst"}</b><span class="d-cap">${S.lock?"Allt är låst":"Tryck för att låsa"}</span></div></div>`}
+    // scener
+    const SC=L?L.scenes.map(x=>({name:x.name,attr:`data-dhx="${x.id.split(".")[0]}:turn_on:${x.id}"`,icon:/natt|sov/i.test(x.name)?"moon":/lämna|borta|ut/i.test(x.name)?"lock":/hem/i.test(x.name)?"house":"spark",on:false}))
+      :[["away","Lämnar hemmet","lock"],["night","Godnatt","moon"],["home","Hemma","house"],["clean","Städa","spark"]].map(([id,n,ic])=>({name:n,attr:`data-dscene="${id}"`,icon:ic,on:S.scene===id}));
+    const leave=SC.find(x=>/lämna|borta|away/i.test(x.name)),rest=SC.filter(x=>x!==leave);
+    const leaveBtn=leave?`<button class="wl-leave" ${leave.attr}>${ico("lock")}<span><b>${esc(leave.name)}</b><small>Släcker och låser</small></span></button>`:"";
+    const scenes=rest.length?`<div class="wl-scenes">${rest.map(x=>`<button class="wl-sc${x.on?" on":""}" ${x.attr}>${ico(x.icon)}<span>${esc(x.name)}</span></button>`).join("")}</div>`:"";
+    // små rutor
+    const lOn=L?L.lightsOn:S.lights.filter(l=>l.on).length,lAll=L?L.lights:S.lights.length;
+    const lights=`<div class="wl-card wl-mini"><span class="wl-lbl">Lampor</span><b class="wl-num">${lOn}<small> av ${lAll} tända</small></b>${lOn?`<button class="wl-pill" ${L?'data-dhx="light:turn_off:all"':'data-dact="lightsoff"'}>Släck alla</button>`:`<span class="d-cap">Allt släckt</span>`}</div>`;
+    const inneV=L&&L.climate?L.climate.attributes.current_temperature:(!L&&S.heat&&S.heat[0]?S.heat[0].t:null);
+    const inne=inneV!=null?`<button class="wl-card wl-mini" data-go="smart"><span class="wl-lbl">Inne</span><b class="wl-num">${f1(inneV)}°</b><span class="d-cap">${esc(L&&L.climate?L.climate.attributes.friendly_name||"":"Värmepump")}</span></button>`:"";
+    const e=Smart.el(),eh=e.data;let el="";
+    if(eh){const v=eh.filter(x=>x!=null),mn=Math.min(0,...v),mx=Math.max(...v),c=Smart.cheap(eh,h,3);
+      el=`<button class="wl-card wl-mini" data-go="smart"><span class="wl-lbl">Elpris nu</span><b class="wl-num">${Math.round(eh[h])}<small> öre</small></b><span class="wl-bars">${eh.map((x,i)=>`<i class="${i===h?"now":c&&i>=c.i&&i<c.i+3?"cheap":""}" style="height:${x==null?0:Math.max(10,(x-mn)/((mx-mn)||1)*100)}%"></i>`).join("")}</span>${c?`<span class="d-cap">Billigast ${pad(c.i)}–${pad(c.i+3)}</span>`:""}</button>`}
+    // förskolans lunch
+    const lu=L&&L.lunch,late=h>=14||!(lu&&lu.today);
+    const lunchCard=lu&&(lu.today||lu.tomorrow)?`<div class="wl-dagis">${ico("food")}<div><span class="wl-lbl">${late&&lu.tomorrow?"Lunch imorgon":"Lunch idag"}</span><b>${esc(late&&lu.tomorrow?lu.tomorrow:lu.today)}</b></div></div>`:"";
+    // väder
+    const weather=!o?`<form class="wl-ort" data-ortform><input name="ort" placeholder="Skriv in er ort för väder" aria-label="Din ort" autocomplete="address-level2"><button class="wl-pill">Spara</button></form>`
+      :!w?`<p class="wl-sub">Hämtar vädret för ${esc(o)} …</p>${lunchCard?`<div class="wl-chips">${lunchCard}</div>`:""}`
+      :`<div class="wl-wx">${wxArt(w.code,ph==="night")}<div><b class="wl-temp">${Math.round(w.now)}°</b><span class="wl-sub">${esc(WX_TXT(w.code))} · ${Math.round(w.min)}° till ${Math.round(w.max)}°${w.rain?` · ${w.rain} % nederbörd`:""}</span><span class="wl-sub dim">${esc(w.place||o)}${w.set?` · solen går ner ${esc(w.set)}`:""}</span></div></div>
+        <div class="wl-chips"><div class="wl-dagis">${ico("hanger")}<div><span class="wl-lbl">Dagis idag</span><b>${esc(dagis(w))}</b></div></div>${lunchCard}</div>`;
+    const panel=(t,body)=>`<div class="wl-card wl-panel"><span class="wl-lbl">${t}</span>${body}</div>`;
+    return `<div class="wl ${ph}">
+      <div class="wl-hero">
+        <div class="wl-top"><span class="wl-greet">${greet(h)}</span><button class="wl-pill wl-exit" data-go="">Stäng</button></div>
+        <span class="wl-time" data-dclock>${pad(h)}:${pad(d.getMinutes())}</span>
+        <span class="wl-date">${esc(d.toLocaleDateString("sv-SE",{weekday:"long",day:"numeric",month:"long"}))}</span>
+        ${weather}
+      </div>
+      <div class="wl-side">${door}${leaveBtn}${scenes}<div class="wl-minis">${lights}${inne}${el}</div></div>
+      <div class="wl-strip">
+        ${panel("Snart",cds.map(x=>`<div class="wl-cd"><b>${x.days}</b><span>${x.days===1?"dag":"dagar"} till ${esc(x.name.toLowerCase())}</span></div>`).join("")||`<p class="wl-sub dim">Inget inlagt</p>`)}
+        ${panel("Att göra",td.map(x=>`<div class="wl-row"><span>${esc(x.what)} <small>${esc(x.sub)}</small></span><span class="d-rr"><span class="st ${x.state}">${esc(x.when)}</span><button class="delq" data-dtdrop="${x.key}" aria-label="Ta bort påminnelsen" title="Ta bort">${ico("trash")}</button></span></div>`).join("")||`<p class="wl-sub dim">Inget som brådskar</p>`)}
+        ${panel("Att handla",(shop.length?`<p class="wl-shop">${shop.slice(0,8).map(esc).join(" · ")}${shop.length>8?` · +${shop.length-8}`:""}</p>`:`<p class="wl-sub dim">Listan är tom</p>`)+`<button class="wl-pill" data-go="t-inkop">Öppna listan</button>`)}
+      </div>
+      ${s.live?"":`<p class="wl-demo">Visningsläge · styr på riktigt när Home Assistant är inkopplat</p>`}
+    </div>`}
   function html(wall){const L=Smart.liveDash(),d=new Date(),S=Smart.dev(),s=Smart.summary(),o=ort(),w=o?wxFor(o):null,cds=countdowns().slice(0,wall?2:3),td=Garage.todos().slice(0,4),
       shop=String((store.get("t-inkop",{})||{}).items||"").split("\n").map(x=>x.trim()).filter(Boolean).slice(0,8),
       inne=S.heat&&S.heat[0]?S.heat[0].t:21,camsOn=S.cams.filter(c=>c.on).length,vac=S.robots.find(r=>r.kind==="vac")||{st:"–"},sc=S.scene||"";
@@ -2947,7 +3075,7 @@ const Dash=(function(){
       <div class="d-tile d-clock">${wall?`<button class="btn sm d-exit" data-go="">Stäng</button>`:`<button class="btn sm d-exit" data-go="t-morgon">${ico("receipt")}Morgonkvitto</button>`}
         <span class="d-time" data-dclock>${pad(d.getHours())}:${pad(d.getMinutes())}</span><span class="d-date">${esc(d.toLocaleDateString("sv-SE",{weekday:"long",day:"numeric",month:"long"}))}</span></div>
       ${elTile()}${wxTile(w,o)}
-      <div class="d-tile d-wide"><span class="d-lbl">Dagis idag</span>${w?`<b class="d-title">${esc(dagis(w))}</b><span class="d-cap on">${Math.round(w.min)}° – ${Math.round(w.max)}°</span>`:`<span class="d-cap">${o?"Väntar på vädret":"Skriv in orten så tipsar jag om kläder"}</span>`}</div>
+      <div class="d-tile d-wide"><span class="d-lbl">Dagis idag</span>${w?`<b class="d-title">${esc(dagis(w))}</b><span class="d-cap on">${Math.round(w.min)}° – ${Math.round(w.max)}°</span>`:`<span class="d-cap">${o?"Väntar på vädret":"Skriv in orten så tipsar jag om kläder"}</span>`}${L&&L.lunch&&L.lunch.today?`<span class="d-lunch">${ico("food")}${esc(L.lunch.today)}</span>`:""}</div>
       ${L?liveTiles(L):""}${L?"":SC.map(([id,n,ic])=>{const on=sc===id;return `<div class="d-tile"><span class="d-lbl">${n}</span>${circ(on,ic,`data-dscene="${id}" aria-label="${n}"`)}<span class="d-cap${on?" on":""}">${on?(id==="clean"?"Städar":"Aktiv"):"Av"}</span></div>`}).join("")+`
       <div class="d-tile"><span class="d-lbl">Ytterdörr</span>${circ(false,"lock",`data-dact="lock" aria-label="Lås eller lås upp ytterdörren"`).replace('class="d-circ"',S.lock?'class="d-circ"':'class="d-circ warn"')}<span class="d-cap${S.lock?"":" warn"}">${S.lock?"Låst":"Olåst"}</span></div>
       <button class="d-tile" data-go="smart"><span class="d-lbl">Inne</span><span class="d-big">${String(inne).replace(".",",")}°</span><span class="d-cap">Värmepump</span></button>
@@ -2955,22 +3083,24 @@ const Dash=(function(){
       <div class="d-tile"><span class="d-lbl">Dammsugare</span>${circ(vac.st==="Städar","robot",`data-dact="vac" aria-label="Starta eller stoppa dammsugaren"`)}<span class="d-cap${vac.st==="Städar"?" on":""}">${esc(vac.st)}</span></div>`}
       <div class="d-panels">
         <div class="d-panel"><span class="d-lbl">Snart</span>${cds.map(x=>`<div class="d-cd"><b>${x.days}</b><span>${x.days===1?"dag":"dagar"} till ${esc(x.name.toLowerCase())}</span></div>`).join("")||`<p class="d-cap">Inget inlagt.</p>`}</div>
-        <div class="d-panel"><span class="d-lbl">Att göra</span>${td.map(x=>`<div class="d-row"><span>${esc(x.what)} <small>${esc(x.sub)}</small></span><span class="st ${x.state}">${esc(x.when)}</span></div>`).join("")||`<p class="d-cap">Inget som brådskar.</p>`}</div>
+        <div class="d-panel"><span class="d-lbl">Att göra</span>${td.map(x=>`<div class="d-row"><span>${esc(x.what)} <small>${esc(x.sub)}</small></span><span class="d-rr"><span class="st ${x.state}">${esc(x.when)}</span><button class="delq" data-dtdrop="${x.key}" aria-label="Ta bort påminnelsen" title="Ta bort">${ico("trash")}</button></span></div>`).join("")||`<p class="d-cap">Inget som brådskar.</p>`}</div>
         <div class="d-panel"><span class="d-lbl">Att handla</span>${shop.map(x=>`<div class="d-row"><span>${esc(x)}</span></div>`).join("")||`<p class="d-cap">Listan är tom.</p>`}<button class="btn sm" data-go="t-inkop" style="margin-top:auto">Öppna listan</button></div>
       </div>
       ${s.live?"":`<p class="d-demo">Visningsläge · styr på riktigt när Home Assistant är inkopplat</p>`}
     </div>`}
   let host=null;
-  function paint(){if(host&&!host.hidden)host.innerHTML=html(host.id==="v-wall")}
+  function paint(){if(host&&!host.hidden)host.innerHTML=host.id==="v-wall"?wallHTML():html(false)}
   function onClick(e){const hx=e.target.closest("[data-dhx]"),hl=e.target.closest("[data-dhl]");
     if(hx){const[dm,sv,id]=hx.dataset.dhx.split(":");Smart.call(dm,sv,id);hx.classList.add("on");return}
-    if(hl){if(hl.dataset.st==="locked"&&!hl.dataset.armed){hl.dataset.armed="1";const c=hl.parentElement.querySelector(".d-cap");if(c)c.textContent="Tryck igen för att låsa upp";setTimeout(()=>{if(hl.isConnected){delete hl.dataset.armed;paint()}},4000);return}
+    if(hl){if(hl.dataset.st==="locked"&&!hl.dataset.armed){hl.dataset.armed="1";const c=(hl.closest(".wl-door")||hl.parentElement).querySelector(".d-cap");if(c)c.textContent="Tryck igen för att låsa upp";setTimeout(()=>{if(hl.isConnected){delete hl.dataset.armed;paint()}},4000);return}
       Smart.call("lock",hl.dataset.st==="locked"?"unlock":"lock",hl.dataset.dhl);return}
+    const dx=e.target.closest("[data-dtdrop]");if(dx){if(!dx.classList.contains("armed")){dx.classList.add("armed");dx.textContent="Ta bort?";setTimeout(()=>{if(dx.isConnected&&dx.classList.contains("armed"))paint()},4000);return}Garage.dropTodo(dx.dataset.dtdrop);paint();return}
     const sc=e.target.closest("[data-dscene]"),ac=e.target.closest("[data-dact]");
     if(sc){Smart.runScene(sc.dataset.dscene);paint();return}
     if(ac){const S=Smart.dev(),a=ac.dataset.dact;
       if(a==="lock")S.lock=!S.lock;
       if(a==="cams"){const on=!S.cams.some(c=>c.on);S.cams.forEach(c=>c.on=on)}
+      if(a==="lightsoff")S.lights.forEach(l=>l.on=false);
       if(a==="vac"){const r=S.robots.find(x=>x.kind==="vac");if(r)r.st=r.st==="Städar"?"Dockad":"Städar"}
       Smart.persist();paint()}}
   function onSubmit(e){const f=e.target.closest("[data-ortform]");if(!f)return;e.preventDefault();const o=f.ort.value.trim();if(!o)return;const t=store.get("t-morgon",{})||{};t.ort=o;store.set("t-morgon",t);paint();[1500,4000,8000].forEach(ms=>setTimeout(paint,ms))}
