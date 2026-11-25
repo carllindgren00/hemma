@@ -541,6 +541,7 @@ body.locked>*:not(#gate):not(#snack):not(script){display:none!important}
 .sh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:12px}
 .sh-tile{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow);min-width:0;transition:background .2s ease,border-color .2s ease}
 .sh-tile.wide{grid-column:span 2}
+.sh-ged{margin-bottom:16px}.sh-gform{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}.sh-gpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px 14px}.sh-tile.grp{border-style:dashed}.sh-gname{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:2px}.sh-gname span{font-size:.78rem;color:var(--accent);font-weight:600}.sh-gm{display:flex;flex-direction:column;gap:10px;margin-top:8px;padding-top:12px;border-top:1px solid var(--line)}.sh-gmr{display:flex;flex-direction:column;gap:4px}.sh-gmh{display:flex;align-items:center;gap:10px}.sh-gmh span{flex:1;min-width:0;font-weight:600}.sh-gmh small{color:var(--muted)}.sh-gnote{font-size:.85rem;margin:4px 0 0}.sh-tile.grp.on{border-style:solid}
 @media (max-width:420px){.sh-tile.wide{grid-column:span 1}}
 .sh-tile b{font:700 1.02rem/1.25 var(--f-display);overflow-wrap:anywhere}
 .sh-tile small{color:var(--muted);font-size:.82rem}
@@ -2701,7 +2702,8 @@ const Smart=(function(){
   let hidden=new Set(store.get("ha-hidden",[]));const saveHidden=()=>store.set("ha-hidden",[...hidden]);
   const base=()=>HA.url.trim().replace(/\/+$/,"");
   function send(o){return new Promise((ok,no)=>{if(!ws||ws.readyState!==1)return no(new Error("Inte ansluten till Home Assistant"));const id=wsId++;o.id=id;pend[id]={ok,no};ws.send(JSON.stringify(o))})}
-  const dragging=()=>{const a=document.activeElement;return a&&a.type==="range"};
+  let gEd=null,gOpen="";const GR=()=>store.get("ha-groups",[]),saveGR=g=>store.set("ha-groups",g);
+  const dragging=()=>{const a=document.activeElement;return a&&(a.type==="range"||(gEd&&a.closest&&a.closest(".sh-ged")))};
   function soon(){clearTimeout(rTimer);rTimer=setTimeout(()=>{if(dragging()){soon();return}if(!$("#v-smart").hidden)paintBody();if(typeof Dash!=="undefined")Dash.repaint()},250)}
   function haConnect(){if(!live())return;if(ws){const o=ws;ws=null;try{o.close()}catch(e){}}
     if(location.protocol==="https:"&&/^http:/i.test(base())){wsState="err";wsMsg="Adressen måste börja med https:// när Hemma öppnas från webben. Använd Tailscale-adressen som slutar på .ts.net.";render();return}
@@ -2749,16 +2751,41 @@ const Smart=(function(){
     if(dm==="camera"){return tile(cls("cam wide"),top()+nmh+(a.entity_picture?`<img class="sh-cam" loading="lazy" alt="Bild från ${esc(nm(x))}" src="${esc(base()+a.entity_picture+(a.entity_picture.includes("?")?"&":"?")+"t="+Math.floor(Date.now()/10000))}">`:`<small>${esc(st)}</small>`))}
     if(dm==="alarm_control_panel"){return tile(cls("alarm"),top()+nmh+`<small>${ALM[st]||esc(st)}</small>`)}
     return tile(cls(""),top()+nmh+`<small>${esc(st)}</small>`)}
+  // egna lampgrupper, skapas i Hemma
+  function gTile(g){const m=g.ents.map(id=>haMap[id]).filter(Boolean),onM=m.filter(x=>x.state==="on"),on=onM.length>0,
+      br=onM.filter(x=>x.attributes&&x.attributes.brightness!=null),pct=br.length?Math.max(1,Math.round(br.reduce((a,x)=>a+x.attributes.brightness,0)/br.length/2.55)):null;
+    const r=edit?`<button class="btn sm" data-hged="${g.id}">Ändra</button>`:tog(on,`data-hgx="${g.id}" data-on="${on?1:0}"`),op=gOpen===g.id&&!edit;
+    const pr=g.preset&&Object.keys(g.preset).length;
+    const list=op?`<div class="sh-gm">${m.map(x=>{const xo=x.state==="on",xp=x.attributes&&x.attributes.brightness!=null?Math.max(1,Math.round(x.attributes.brightness/2.55)):null,dm=x.entity_id.split(".")[0];
+        return `<div class="sh-gmr"><div class="sh-gmh"><span>${esc(nm(x))}</span><small>${xo?(xp!=null?xp+" %":"På"):"Av"}</small>${tog(xo,`data-hx="${dm}:toggle:${x.entity_id}"`)}</div>${xo&&xp!=null?`<input type="range" min="1" max="100" value="${xp}" data-hbri="${x.entity_id}" aria-label="Ljusstyrka ${esc(nm(x))}">`:""}</div>`}).join("")}
+      <p class="muted sh-gnote">${pr?"Startläge sparat. Gruppknappen tänder lamporna med ljuset du sparade.":"Ställ in lamporna som du vill ha dem och spara. Då tänds de så när du trycker på gruppknappen."}</p>
+      <div class="acts" style="margin:0"><button class="btn sm pri" data-hgsave="${g.id}">Spara som startläge</button>${pr?`<button class="btn sm" data-hgclr="${g.id}">Rensa startläget</button>`:""}<button class="btn sm" data-hgopen="${g.id}">Stäng</button></div></div>`:"";
+    return tile("light grp"+(on?" on":"")+(op?" wide open":""),`<div class="sh-top"><span class="sh-ic">${ico("bulb")}</span>${r}</div><button class="sh-gname" data-hgopen="${g.id}" aria-expanded="${op}"><b>${esc(g.name)}</b><span>${op?"Dölj lamporna":"Visa lamporna"}${pr?" · startläge sparat":""}</span></button><small>${!m.length?"Lamporna hittas inte":on?`${onM.length} av ${m.length} tända${pct!=null?" · "+pct+" %":""}`:`${m.length} lampor · av`}</small>`+(on&&pct!=null&&!edit&&!op?`<input type="range" min="1" max="100" value="${pct}" data-hgbri="${g.id}" aria-label="Ljusstyrka ${esc(g.name)}">`:"")+list)}
+  function gOn(x){const pr=x.preset||{};if(!Object.keys(pr).length){call("homeassistant","turn_on",x.ents);return}
+    const by={};x.ents.forEach(id=>{const v=pr[id];if(v==="off")return;if(id.startsWith("light.")&&typeof v==="number")(by[v]=by[v]||[]).push(id);else (by.on=by.on||[]).push(id)});
+    Object.entries(by).forEach(([k,ids])=>k==="on"?call("homeassistant","turn_on",ids):call("light","turn_on",ids,{brightness_pct:+k}))}
+  function gEditor(){const L=Object.values(haMap).filter(x=>/^(light|switch)\./.test(x.entity_id)&&!(entReg[x.entity_id]&&(entReg[x.entity_id].entity_category||entReg[x.entity_id].disabled_by))),by={};
+    L.forEach(x=>{const k=areaOf(x.entity_id);(by[k]=by[k]||[]).push(x)});
+    const ks=Object.keys(by).sort((p,q)=>p===gEd.area?-1:q===gEd.area?1:!p?1:!q?-1:(areas[p]||"").localeCompare(areas[q]||"","sv"));
+    const sel=new Set(gEd.ents);
+    return `<div class="card pad sh-ged"><div class="hmbar"><h2 class="hm-h">${gEd.id?"Ändra grupp":"Ny lampgrupp"}</h2><span class="muted">${sel.size} valda</span></div>
+      <div class="sh-gform"><label class="fld"><span>Namn</span><input id="g-name" value="${esc(gEd.name)}" placeholder="Till exempel Vardagsrum" autocomplete="off"></label>
+      <label class="fld"><span>Visas i rummet</span><select id="g-area"><option value="">Utan rum</option>${Object.entries(areas).sort((a,b)=>a[1].localeCompare(b[1],"sv")).map(([k,v])=>`<option value="${esc(k)}"${k===gEd.area?" selected":""}>${esc(v)}</option>`).join("")}</select></label></div>
+      ${ks.map(k=>`<p class="eyebrow" style="margin:14px 0 6px">${esc(k?(areas[k]||"Rum"):"Utan rum")}</p><div class="sh-gpick">${by[k].sort((p,q)=>nm(p).localeCompare(nm(q),"sv")).map(x=>`<label class="chk"><input type="checkbox" data-gent="${x.entity_id}"${sel.has(x.entity_id)?" checked":""}><span>${esc(nm(x))}</span></label>`).join("")}</div>`).join("")||note("Hittar inga lampor.")}
+      <label class="chk" style="margin-top:14px"><input type="checkbox" id="g-hide"${gEd.hide?" checked":""}><span>Dölj de enskilda lamporna så att bara gruppen syns</span></label>
+      <p class="note warn" id="g-err" hidden></p>
+      <div class="acts" style="margin-top:12px"><button class="btn pri" id="g-save">Spara gruppen</button><button class="btn" id="g-cancel">Avbryt</button>${gEd.id?`<button class="btn" id="g-del">Ta bort gruppen</button>`:""}</div></div>`}
   function haBody(){
     if(wsState!=="ok")return `<div class="card pad">${wsState==="err"?`<p class="note warn">${esc(wsMsg)}</p>${diag||probe?`<p class="note" style="font-family:ui-monospace,Menlo,monospace;font-size:.8rem">Felsökning: ${esc([probe,diag,navigator.standalone?"hemskärmsapp":"webbläsare"].filter(Boolean).join(" · "))}</p>`:""}<div class="acts" style="margin-top:10px"><button class="btn" id="ha-retry">Försök igen</button><button class="btn" id="ha-open">Ändra adress eller nyckel</button></div>`:note("Ansluter till Home Assistant …")}</div>`;
     const all=ents(),vis=all.filter(x=>edit||!hidden.has(x.entity_id)).sort((p,q)=>ORDER(p.entity_id.split(".")[0])-ORDER(q.entity_id.split(".")[0])||nm(p).localeCompare(nm(q),"sv"));
     const sc=vis.filter(x=>/^(scene|script)\./.test(x.entity_id)),rest=vis.filter(x=>!/^(scene|script)\./.test(x.entity_id)),g={};
     rest.forEach(x=>{const k=areaOf(x.entity_id);(g[k]=g[k]||[]).push(x)});
+    const gg={};GR().forEach(x=>{const k=x.area&&areas[x.area]?x.area:"";(gg[k]=gg[k]||[]).push(x);g[k]=g[k]||[]});
     const keys=Object.keys(g).sort((p,q)=>!p?1:!q?-1:(areas[p]||"").localeCompare(areas[q]||"","sv"));
-    return `<div class="hmbar"><span class="muted">${edit?"Tryck på en pryl för att dölja eller visa den.":`${rest.length} prylar i ${keys.filter(Boolean).length} rum · uppdateras direkt`}</span><button class="btn sm${edit?" pri":""}" id="ha-edit">${edit?"Klar":"Välj vad som visas"}</button></div>`+
+    return `<div class="hmbar"><span class="muted">${edit?"Tryck på en pryl för att dölja eller visa den.":`${rest.length} prylar i ${keys.filter(Boolean).length} rum · uppdateras direkt`}</span><span class="acts" style="margin:0"><button class="btn sm" id="ha-gnew">+ Lampgrupp</button><button class="btn sm${edit?" pri":""}" id="ha-edit">${edit?"Klar":"Välj vad som visas"}</button></span></div>`+(gEd?gEditor():"")+
       (sc.length?`<div class="sh-scenes">${sc.map(x=>`<button class="scene${hidden.has(x.entity_id)?" dim":""}" ${edit?`data-hhide="${x.entity_id}"`:`data-hx="${x.entity_id.split(".")[0]}:turn_on:${x.entity_id}"`}>${ico(x.entity_id.startsWith("scene")?"spark":"moon")}<span>${esc(nm(x))}</span></button>`).join("")}</div>`
         :note("Tips: skapa scener i Home Assistant, till exempel Godnatt och Lämnar hemmet, under Inställningar → Automationer och scener → Scener. De dyker upp här automatiskt."))+
-      keys.map(k=>`<section class="sh-sec"><div class="hmbar"><h2 class="hm-h">${esc(k?(areas[k]||"Rum"):"Utan rum")}</h2><span class="muted">${g[k].length}</span></div><div class="sh-grid">${g[k].map(haTile).join("")}</div></section>`).join("")}
+      keys.map(k=>`<section class="sh-sec"><div class="hmbar"><h2 class="hm-h">${esc(k?(areas[k]||"Rum"):"Utan rum")}</h2><span class="muted">${g[k].length+(gg[k]||[]).length}</span></div><div class="sh-grid">${(gg[k]||[]).map(gTile).join("")}${g[k].map(haTile).join("")}</div></section>`).join("")}
   function paintBody(){const b=$("#sh-body");if(b)b.innerHTML=live()?haBody():demoHTML()}
   function liveDash(){if(!live()||wsState!=="ok")return null;const all=ents().filter(x=>!hidden.has(x.entity_id)),by=dm=>all.filter(x=>x.entity_id.startsWith(dm+"."));
     return{scenes:by("scene").concat(by("script")).slice(0,4).map(x=>({id:x.entity_id,name:nm(x)})),lock:by("lock")[0]||null,climate:by("climate").find(x=>x.attributes.current_temperature!=null)||null,
@@ -2828,13 +2855,33 @@ const Smart=(function(){
     else if(d.hlock){if(d.st==="locked"&&!b.dataset.armed){b.dataset.armed="1";b.textContent="Säker? Tryck igen";setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent="Lås upp"}},4000);return}call("lock",d.st==="locked"?"unlock":"lock",d.hlock);ch=false}
     else if(d.hhide){hidden.has(d.hhide)?hidden.delete(d.hhide):hidden.add(d.hhide);saveHidden();paintBody();ch=false}
     else if(b.id==="ha-edit"){edit=!edit;paintBody();ch=false}
+    else if(b.id==="ha-gnew"){gEd={id:"",name:"",area:"",ents:[],hide:true};paintBody();const n=$("#g-name");if(n){n.scrollIntoView({block:"center"});n.focus()}ch=false}
+    else if(d.hged){const x=GR().find(q=>q.id===d.hged);if(x){gEd={id:x.id,name:x.name,area:x.area||"",ents:[...x.ents],hide:!!x.hide};edit=false;paintBody();$("#g-name").scrollIntoView({block:"center"})}ch=false}
+    else if(b.id==="g-cancel"){gEd=null;paintBody();ch=false}
+    else if(b.id==="g-save"){const err=$("#g-err");gEd.name=$("#g-name").value.trim();
+      if(!gEd.name||!gEd.ents.length){err.hidden=false;err.textContent=!gEd.name?"Ge gruppen ett namn.":"Välj minst en lampa.";ch=false}
+      else{const list=GR().filter(q=>q.id!==gEd.id),old=GR().find(q=>q.id===gEd.id);if(old&&old.hide)old.ents.forEach(id=>hidden.delete(id));
+        const ng={id:gEd.id||"g"+Date.now().toString(36),name:gEd.name,area:gEd.area,ents:gEd.ents,hide:gEd.hide};if(old&&old.preset)ng.preset=old.preset;list.push(ng);saveGR(list);
+        if(ng.hide)ng.ents.forEach(id=>hidden.add(id));saveHidden();gEd=null;paintBody();snackMsg("Gruppen "+ng.name+" är sparad");ch=false}}
+    else if(b.id==="g-del"){if(!b.dataset.armed){b.dataset.armed="1";b.textContent="Säker? Tryck igen";return}
+      const old=GR().find(q=>q.id===gEd.id);if(old&&old.hide){old.ents.forEach(id=>hidden.delete(id));saveHidden()}saveGR(GR().filter(q=>q.id!==gEd.id));gEd=null;paintBody();ch=false}
+    else if(d.hgopen){gOpen=gOpen===d.hgopen?"":d.hgopen;paintBody();ch=false}
+    else if(d.hgsave){const list=GR(),x=list.find(q=>q.id===d.hgsave);if(x){x.preset={};x.ents.forEach(id=>{const e=haMap[id];if(!e)return;x.preset[id]=e.state!=="on"?"off":(e.attributes&&e.attributes.brightness!=null?Math.max(1,Math.round(e.attributes.brightness/2.55)):"on")});saveGR(list);snackMsg("Startläget för "+x.name+" är sparat");paintBody()}ch=false}
+    else if(d.hgclr){const list=GR(),x=list.find(q=>q.id===d.hgclr);if(x){delete x.preset;saveGR(list);paintBody()}ch=false}
+    else if(d.hgx){const x=GR().find(q=>q.id===d.hgx);if(x){const on=d.on==="1";if(on)call("homeassistant","turn_off",x.ents);else gOn(x);b.classList.toggle("on",!on);b.setAttribute("aria-pressed",String(!on))}ch=false}
     else if(b.id==="ha-retry"){retry=0;haConnect();render();ch=false}
     else if(b.id==="ha-open"){showSet=true;render();ch=false}
     else ch=false;
     if(ch){save();render()}});
   V.addEventListener("input",e=>{if(e.target.dataset.bri){const l=D.lights.find(x=>x.id===e.target.dataset.bri);l.bri=+e.target.value;save();const s=e.target.parentElement.querySelector("small");if(s)s.textContent=`${l.b} · ${l.bri} %`}});
   V.addEventListener("change",e=>{if(e.target.id==="sh-follow"){D.camFollow=e.target.checked;save()}
-    if(e.target.dataset.hbri){call("light","turn_on",e.target.dataset.hbri,{brightness_pct:+e.target.value});e.target.blur()}});
+    if(e.target.dataset.hbri){call("light","turn_on",e.target.dataset.hbri,{brightness_pct:+e.target.value});e.target.blur()}
+    if(e.target.dataset.hgbri){const x=GR().find(q=>q.id===e.target.dataset.hgbri);if(x){const ls=x.ents.filter(id=>id.startsWith("light.")&&haMap[id]&&haMap[id].state==="on");if(ls.length)call("light","turn_on",ls,{brightness_pct:+e.target.value})}e.target.blur()}
+    if(gEd&&e.target.dataset.gent){const id=e.target.dataset.gent;gEd.ents=gEd.ents.filter(q=>q!==id);if(e.target.checked)gEd.ents.push(id);const c=$(".sh-ged .hmbar .muted");if(c)c.textContent=gEd.ents.length+" valda"}
+    if(gEd&&e.target.id==="g-area"){gEd.area=e.target.value;gEd.name=$("#g-name").value;if(!gEd.name.trim()&&gEd.area)gEd.name=areas[gEd.area]||"";
+      if(!gEd.ents.length&&gEd.area)gEd.ents=Object.keys(haMap).filter(id=>/^light\./.test(id)&&areaOf(id)===gEd.area);paintBody()}
+    if(gEd&&e.target.id==="g-hide")gEd.hide=e.target.checked});
+  V.addEventListener("input",e=>{if(gEd&&e.target.id==="g-name")gEd.name=e.target.value});
   function refresh(){if(!$("#v-smart").hidden)$("#sh-el").innerHTML=`<div class="hmbar"><h2 class="hm-h">Elpriset idag</h2><span class="muted">Tibber följer samma spotpris</span></div>`+elHTML(false);if(typeof Dash!=="undefined")Dash.repaint()}
   if(live())setTimeout(haConnect,50);
   return{route(){crumbs([["Hem",""],["Smarta hemmet","smart"]]);if(live()&&!ws&&wsState!=="err")haConnect();render()},liveDash,call,isLive:()=>live(),refresh,elHTML,scenes:()=>SCENES,runScene(id){SCENES.find(s=>s[0]===id)[3]();D.scene=id;save()},dev:()=>D,persist:()=>save(),el:()=>elpris(),cheap:(h,f,l)=>cheapest(h,f,l),summary:()=>({on:D.lights.filter(l=>l.on).length,alarm:D.alarm,live:live()&&wsState==="ok"})};
