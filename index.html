@@ -545,9 +545,11 @@ body.locked>*:not(#gate):not(#snack):not(script){display:none!important}
 .prn-spec{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:.9rem}.prn-spec b{color:var(--fg)}
 .prn-mats{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;width:100%;margin-top:14px}
 .prn-mat{border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--surface);text-align:left}
-.prn-mh{display:flex;flex-direction:column;gap:2px}.prn-mh b{font:800 1.2rem var(--f-display)}.prn-mh small{color:var(--muted)}
+.prn-mh{display:flex;flex-direction:column;gap:2px}.prn-mh>b{font:800 1.2rem var(--f-display)}.prn-mh small{color:var(--muted)}.prn-mh small b{color:var(--fg);font:600 1em var(--f-ui)}.prn-what{font-size:.88rem;line-height:1.45;margin:2px 0 4px}
 .prn-vals{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.prn-vals span{display:flex;flex-direction:column;font-weight:700;font-size:.92rem}.prn-vals small{font-weight:500;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em}
+.prn-shop{border-top:1px dashed var(--line);padding-top:10px;display:flex;flex-direction:column;gap:4px}.prn-shop small{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;font-weight:600}.prn-shop>b{font-size:.98rem}.prn-shop ul{margin:4px 0 0;padding-left:16px;font-size:.85rem;color:var(--muted);display:flex;flex-direction:column;gap:3px}.prn-shop li b{color:var(--fg)}
 .prn-mat p{margin:0;font-size:.88rem;color:var(--muted);line-height:1.45}
+.prn-buy{width:100%;margin-top:16px;text-align:left;display:flex;flex-direction:column;gap:10px}.prn-bgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.prn-bgrid>div{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface);display:flex;flex-direction:column;gap:3px}.prn-bgrid small{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;font-weight:600}.prn-bgrid b{font:800 1.15rem var(--f-display)}.prn-bgrid span{font-size:.85rem;color:var(--muted);line-height:1.4}.prn-q{margin:0;font-size:.93rem;line-height:1.5}
 .prn-tips{width:100%;margin-top:16px;text-align:left}.prn-tips ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:.95rem}
 .lb-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
 @media (min-width:821px){.lb-prev{position:sticky;top:84px}}
@@ -2562,15 +2564,31 @@ const spName=s=>`${s.mat} ${s.color} · ${Math.round(num(s.left))} g kvar`;
 const spoolLabel=s=>`<div class="gl-h">Filament</div><div class="gl-t">${esc(s.mat)} ${esc(s.color)}</div>${s.brand?`<div class="gl-s">${esc(s.brand)}</div>`:""}<div class="gl-sep"></div>`+glr("Öppnad",s.opened||today())+glr("Pris",money(kgPrice(s))+"/kg")+glr("Kvar","______ g");
 // --- min skrivare: inställningar för K1C
 const MATG=[
- {m:"PLA",use:"Det mesta inomhus. Lätt att skriva ut.",noz:"200–220 °C",bed:"55–60 °C",fan:"100 %",tips:"Ta av glaslocket eller lämna luckan på glänt. Blir det för varmt i lådan kan munstycket täppas till."},
- {m:"PETG",use:"Tåligare, tål värme och fukt. Bra till garaget.",noz:"230–250 °C",bed:"70–80 °C",fan:"30–50 %",tips:"Fastnar ibland för hårt på bädden. Stryk på ett tunt lager limstift. Lite trådar är normalt."},
- {m:"ABS",use:"Tål sol och värme, till exempel till bilen.",noz:"240–260 °C",bed:"95–100 °C",fan:"0–20 %",tips:"Locket på och luckan stängd. Värm skrivaren 10 minuter före. Ventilera, det luktar."},
- {m:"ASA",use:"Som ABS men tål sol ännu bättre. Bäst för saker ute.",noz:"250–265 °C",bed:"95–100 °C",fan:"0–30 %",tips:"Samma som ABS: stängd låda, varm skrivare och vädra."},
- {m:"TPU",use:"Mjukt och gummiaktigt, till skydd och dämpare.",noz:"220–235 °C",bed:"40–50 °C",fan:"50–100 %",tips:"Skriv ut långsamt. Måste vara torrt. Fungerar inte i flerfärgslådan."}];
+ {m:"PLA",what:"Polylaktid, en bioplast gjord av växtstärkelse som majs eller sockerrör. Stel och lätt att skriva ut, men blir mjuk redan runt 55–60 °C.",use:"Det mesta inomhus: prylar, lådor, pynt och leksaker. Lätt att skriva ut.",noz:"200–220 °C",bed:"55–60 °C",fan:"100 %",tips:"Ta av glaslocket eller lämna luckan på glänt. Blir det för varmt i lådan kan munstycket täppas till.",
+  q:"PLA 1,75 mm 1 kg",vars:[["Hyper PLA / High Speed PLA","Gjord för snabba skrivare som K1C"],["Matte PLA","Matt yta, döljer lagren"],["Silk PLA","Blank och glansig, för pynt"]]},
+ {m:"PETG",what:"Släkt med plasten i PET-flaskor. Tillsatsen glykol gör den segare och mindre spröd. Tål runt 70–80 °C och fukt.",use:"Tåligare, tål värme och fukt. Bra till garaget, köket och badrummet.",noz:"230–250 °C",bed:"70–80 °C",fan:"30–50 %",tips:"Fastnar ibland för hårt på bädden. Stryk på ett tunt lager limstift. Lite trådar är normalt.",
+  q:"PETG 1,75 mm 1 kg",vars:[["PETG HF / High Speed PETG","Snabbare utskrift"]]},
+ {m:"ABS",what:"Akrylnitril-butadien-styren, samma sorts plast som Lego-bitar och många plastdetaljer inne i bilar. Slagtålig och tål runt 95–100 °C.",use:"Tål sol och värme, till exempel till bilen.",noz:"240–260 °C",bed:"95–100 °C",fan:"0–20 %",tips:"Locket på och luckan stängd. Värm skrivaren 10 minuter före. Ventilera, det luktar.",
+  q:"ABS 1,75 mm 1 kg",vars:[]},
+ {m:"ASA",what:"Akrylnitril-styren-akrylat, en släkting till ABS som tål solens UV-ljus. Används till plastdetaljer som sitter utvändigt på bilar.",use:"Som ABS men tål sol och väder ännu bättre. Bäst för saker ute.",noz:"250–265 °C",bed:"95–100 °C",fan:"0–30 %",tips:"Samma som ABS: stängd låda, varm skrivare och vädra.",
+  q:"ASA 1,75 mm 1 kg",vars:[]},
+ {m:"TPU",what:"Termoplastisk polyuretan, en gummiliknande plast, samma sort som många mobilskal. Siffran (95A, 85A) visar hur hård den är.",use:"Mjukt och gummiaktigt, till skydd, fötter och dämpare.",noz:"220–235 °C",bed:"40–50 °C",fan:"50–100 %",tips:"Skriv ut långsamt. Måste vara torrt. Fungerar inte i flerfärgslådan.",
+  q:"TPU 95A 1,75 mm",vars:[["95A","Lagom mjuk, lättast att skriva ut"],["85A","Mjukare, svårare"]]},
+ {m:"PLA-CF",what:"Vanlig PLA med korta, finmalda kolfiberbitar inblandade. Fibrerna gör den styvare och ger en matt yta.",use:"PLA med kolfiber. Styvare och snyggt matt, men lite sprödare. För fästen och hållare.",noz:"210–230 °C",bed:"55–60 °C",fan:"100 %",tips:"K1C har härdat munstycke, så det går bra. Slitande material, så andra skrivare klarar det inte alltid.",
+  q:"PLA-CF 1,75 mm",vars:[]},
+ {m:"PETG-CF",what:"Vanlig PETG med korta, finmalda kolfiberbitar inblandade. Styvare än vanlig PETG men behåller tåligheten.",use:"PETG med kolfiber. Styv och tålig, för starka delar till garaget och bilen.",noz:"240–260 °C",bed:"70–80 °C",fan:"30–50 %",tips:"Samma som PETG men styvare. Torka rullen om utskriften blir bubblig.",
+  q:"PETG-CF 1,75 mm",vars:[]}];
 tool("skrivare",{group:"3d",kind:"lib",icon:"printer",title:"Min skrivare",sub:"Creality K1C: inställningar per material och tips",
   form:()=>sec("",note(`Utgå alltid från värdena på rullen. De här är bra startvärden för ${PRN.name}.`)),
   build(){return `<div class="prn-head"><div><p class="eyebrow">Min skrivare</p><h3>${PRN.name}</h3></div><div class="prn-spec"><span><b>${PRN.x} × ${PRN.y} × ${PRN.z}</b> mm byggyta</span><span><b>300 °C</b> munstycke</span><span><b>100 °C</b> bädd</span></div></div>
-    <div class="prn-mats">${MATG.map(g=>`<div class="prn-mat"><div class="prn-mh"><b>${g.m}</b><small>${esc(g.use)}</small></div><div class="prn-vals"><span><small>Munstycke</small>${g.noz}</span><span><small>Bädd</small>${g.bed}</span><span><small>Fläkt</small>${g.fan}</span></div><p>${esc(g.tips)}</p></div>`).join("")}</div>
+    <p class="eyebrow" style="margin:18px 0 0;width:100%;text-align:left">Material, inställningar och vad du söker på</p><div class="prn-mats">${MATG.map(g=>`<div class="prn-mat"><div class="prn-mh"><b>${g.m}</b><span class="prn-what">${esc(g.what)}</span><small><b>Passar till:</b> ${esc(g.use)}</small></div><div class="prn-vals"><span><small>Munstycke</small>${g.noz}</span><span><small>Bädd</small>${g.bed}</span><span><small>Fläkt</small>${g.fan}</span></div><p>${esc(g.tips)}</p>
+      <div class="prn-shop"><small>Sök på</small><b>”${esc(g.q)}”</b>${g.vars.length?`<ul>${g.vars.map(([n,d])=>`<li><b>${esc(n)}</b> · ${esc(d)}</li>`).join("")}</ul>`:""}</div></div>`).join("")}</div>
+    <div class="prn-buy"><p class="eyebrow">När du handlar filament</p>
+      <div class="prn-bgrid">
+        <div><small>Tjocklek</small><b>1,75 mm</b><span>Står på rullen. Köp aldrig 2,85 mm, den passar inte.</span></div>
+        <div><small>Storlek</small><b>1 kg-rulle</b><span>Vanligast och billigast per gram.</span></div>
+        <div><small>Märken</small><b>Alla vanliga passar</b><span>Till exempel Creality, eSun, Sunlu, Polymaker, Elegoo och Bambu Lab. Crealitys RFID-rullar läses in automatiskt om du köper flerfärgslådan.</span></div>
+      </div></div>
     <div class="prn-tips"><p class="eyebrow">Bra att komma ihåg</p><ul>
       <li>Kör den automatiska kalibreringen första gången och efter flytt.</li>
       <li>Välj profilen <b>Creality K1C 0.4 nozzle</b> i Creality Print eller Orca Slicer, och rätt material.</li>
@@ -2578,7 +2596,7 @@ tool("skrivare",{group:"3d",kind:"lib",icon:"printer",title:"Min skrivare",sub:"
       <li>PETG och TPU drar åt sig fukt. Förvara rullarna i en låda med torkpåsar.</li>
       <li>Skriv in nya rullar i Filamentlagret och kolla vad utskriften kostar innan du kör.</li></ul></div>`}});
 tool("filament",{group:"3d",kind:"lib",icon:"spool",title:"Filamentlagret",sub:"Dina rullar, hur mycket som är kvar och vad de kostar",
-  form:()=>sec("Ny rulle",row(fld("Material",sel("mat",[["PLA","PLA"],["PETG","PETG"],["TPU","TPU"],["ABS","ABS"],["ASA","ASA"]],"PLA")),fld("Färg",inp("color","",'placeholder="Svart" data-nokeep')),fld("Märke",inp("brand","",'placeholder="Bambu Lab" data-nokeep')))+
+  form:()=>sec("Ny rulle",row(fld("Material",sel("mat",[["PLA","PLA"],["PETG","PETG"],["TPU","TPU"],["ABS","ABS"],["ASA","ASA"]],"PLA")),fld("Färg",inp("color","",'placeholder="Svart" data-nokeep')),fld("Märke",inp("brand","",'placeholder="Creality" data-nokeep')))+
       row(fld("Vikt (g)",inp("size","1000",'inputmode="decimal"')),fld("Pris (kr)",inp("price","250",'inputmode="decimal"')))+`<p class="err" id="sp-err" hidden></p>`+acts(act("add","Lägg till rulle",true)))+
     sec("",note("Väg rullen ibland och skriv in vad som är kvar, eller dra av gram efter varje utskrift. Kostnadsräknaren hämtar priset från rullen du väljer.")),
   actions:{add(){const col=v("color").trim(),e=$("#sp-err");if(!col){e.textContent="Skriv vilken färg rullen har.";e.hidden=false;return}e.hidden=true;
