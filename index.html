@@ -541,6 +541,14 @@ body.locked>*:not(#gate):not(#snack):not(script){display:none!important}
 .sh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:12px}
 .sh-tile{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow);min-width:0;transition:background .2s ease,border-color .2s ease}
 .sh-tile.wide{grid-column:span 2}
+.prn-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;width:100%}.prn-head h3{margin:2px 0 0;font:700 1.5rem var(--f-display)}
+.prn-spec{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:.9rem}.prn-spec b{color:var(--fg)}
+.prn-mats{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;width:100%;margin-top:14px}
+.prn-mat{border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--surface);text-align:left}
+.prn-mh{display:flex;flex-direction:column;gap:2px}.prn-mh b{font:800 1.2rem var(--f-display)}.prn-mh small{color:var(--muted)}
+.prn-vals{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.prn-vals span{display:flex;flex-direction:column;font-weight:700;font-size:.92rem}.prn-vals small{font-weight:500;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em}
+.prn-mat p{margin:0;font-size:.88rem;color:var(--muted);line-height:1.45}
+.prn-tips{width:100%;margin-top:16px;text-align:left}.prn-tips ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:.95rem}
 .lb-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
 @media (min-width:821px){.lb-prev{position:sticky;top:84px}}
 @media (max-width:820px){.lb-wrap{grid-template-columns:minmax(0,1fr)}}
@@ -1527,6 +1535,8 @@ tool("foto",{group:"kul",icon:"image",title:"Foto",sub:"Svartvit bild i prickar,
 
 /* ---------- 3D ---------- */
 const P3=Object.assign({price:250},store.get("3d",{})||{});
+const PRN={name:"Creality K1C",x:220,y:220,z:250,w:130};
+const fitsPrn=sz=>{const a=[sz[0],sz[1]].sort((p,q)=>q-p),b=[PRN.x,PRN.y].sort((p,q)=>q-p);return a[0]<=b[0]+.01&&a[1]<=b[1]+.01&&sz[2]<=PRN.z+.01};
 const PLA=1.24;
 const COL3=[["#f3efe6","Vit"],["#2b2b2b","Svart"],["#c8372d","Röd"],["#2f5fa8","Blå"],["#3f8a4a","Grön"],["#e8862a","Orange"],["#e7a9be","Rosa"]];
 const hexRGB=h=>{const x=parseInt(h.slice(1),16);return[x>>16&255,x>>8&255,x&255]};
@@ -1776,7 +1786,7 @@ const K3SPEC=`Skriv koden i ETT kodblock (js) och följ formatet exakt:
 - Metoder: .translate(x,y,z) .rotate(x,y,z) (grader) .scale(k) .mirror("x") .center() .onFloor() .subtract(...) .union(...)
 - Hål ska sticka ut 1 mm på båda sidor. Platt undersida på z=0, inga överhäng över 45°, väggar minst 1,5 mm, skruvhål +0,4 mm.
 - Ingen text eller andra funktioner.`;
-function k3Prompt(desc,code){return `Gör en 3D-modell för min 3D-skrivare (FDM) till min app Hemma: ${desc}\n\n`+(code?`Utgå från och ändra den här modellen:\n\`\`\`js\n${code}\n\`\`\`\n\n`:"")+K3SPEC+`\n\nSkriv en rad om mått och material efter kodblocket.`}
+function k3Prompt(desc,code){return `Gör en 3D-modell för min 3D-skrivare (FDM, ${PRN.name}, byggyta ${PRN.x} × ${PRN.y} × ${PRN.z} mm) till min app Hemma: ${desc}\n\n`+(code?`Utgå från och ändra den här modellen:\n\`\`\`js\n${code}\n\`\`\`\n\n`:"")+K3SPEC+`\n\nSkriv en rad om mått och material efter kodblocket.`}
 function k3Code(t){const m=/```(?:js|javascript)?[^\n]*\n([\s\S]*?)```/i.exec(t||"");return(m?m[1]:t||"").trim()}
 tool("kod",{group:"3d",kind:"3d",icon:"cube",title:"Egen modell från Claude",sub:"Beskriv saken för Claude, klistra in koden och ladda ner STL",
   form:()=>sec("Beskriv vad du vill ha",area("desc","",'rows="3" placeholder="En krok till garageväggen för en 25 mm stång, med två skruvhål"')+chk("fromcur","Ändra modellen som är öppen",false)+acts(act("ask","Fråga Claude",true))+`<p class="note" id="k3-ask" hidden></p>`)+sec("",fld("Modell",`<select data-k="mid" id="f-mid" data-nokeep></select>`)+acts(act("paste","Klistra in ny från Claude",true),act("ny","Tom modell"),act("copy","Kopiera koden"),act("del","Ta bort")))+
@@ -1803,7 +1813,7 @@ tool("kod",{group:"3d",kind:"3d",icon:"cube",title:"Egen modell från Claude",su
     requestAnimationFrame(()=>kDraw(cv,M));kDraw(cv,M);$("#t-print").disabled=!!M.err;
     if(M.err)return{canvas:cv,meta:"Rätta koden, eller be Claude om en ny version."};
     const i=M.info,g=i.vol/1000*PLA;
-    return{canvas:cv,meta:`${mm(i.size[0])} × ${mm(i.size[1])} × ${mm(i.size[2])} mm · högst ${qtyF(Math.round(g*10)/10)} g (${money(g/1000*P3.price)}) helt massiv`}},
+    return{canvas:cv,meta:`${mm(i.size[0])} × ${mm(i.size[1])} × ${mm(i.size[2])} mm · högst ${qtyF(Math.round(g*10)/10)} g (${money(g/1000*P3.price)}) helt massiv`+(fitsPrn(i.size)?"":` · ⚠ Får inte plats i ${PRN.name} (${PRN.x} × ${PRN.y} × ${PRN.z} mm). Dela upp den eller gör den mindre.`)}},
   full(){const M=kRun();if(M.err)throw new Error(M.err);return M.tri},
   fname:()=>`${kName(kNow().code).toLowerCase().replace(/[^a-z0-9åäö]+/g,"-").replace(/^-|-$/g,"")||"modell"}.stl`});
 
@@ -2550,6 +2560,23 @@ const spColor=s=>CMAP3[(s.color||"").toLowerCase().split(/\s/)[0]]||"#b9aa98";
 const kgPrice=s=>num(s.price)/Math.max(1,num(s.size))*1000;
 const spName=s=>`${s.mat} ${s.color} · ${Math.round(num(s.left))} g kvar`;
 const spoolLabel=s=>`<div class="gl-h">Filament</div><div class="gl-t">${esc(s.mat)} ${esc(s.color)}</div>${s.brand?`<div class="gl-s">${esc(s.brand)}</div>`:""}<div class="gl-sep"></div>`+glr("Öppnad",s.opened||today())+glr("Pris",money(kgPrice(s))+"/kg")+glr("Kvar","______ g");
+// --- min skrivare: inställningar för K1C
+const MATG=[
+ {m:"PLA",use:"Det mesta inomhus. Lätt att skriva ut.",noz:"200–220 °C",bed:"55–60 °C",fan:"100 %",tips:"Ta av glaslocket eller lämna luckan på glänt. Blir det för varmt i lådan kan munstycket täppas till."},
+ {m:"PETG",use:"Tåligare, tål värme och fukt. Bra till garaget.",noz:"230–250 °C",bed:"70–80 °C",fan:"30–50 %",tips:"Fastnar ibland för hårt på bädden. Stryk på ett tunt lager limstift. Lite trådar är normalt."},
+ {m:"ABS",use:"Tål sol och värme, till exempel till bilen.",noz:"240–260 °C",bed:"95–100 °C",fan:"0–20 %",tips:"Locket på och luckan stängd. Värm skrivaren 10 minuter före. Ventilera, det luktar."},
+ {m:"ASA",use:"Som ABS men tål sol ännu bättre. Bäst för saker ute.",noz:"250–265 °C",bed:"95–100 °C",fan:"0–30 %",tips:"Samma som ABS: stängd låda, varm skrivare och vädra."},
+ {m:"TPU",use:"Mjukt och gummiaktigt, till skydd och dämpare.",noz:"220–235 °C",bed:"40–50 °C",fan:"50–100 %",tips:"Skriv ut långsamt. Måste vara torrt. Fungerar inte i flerfärgslådan."}];
+tool("skrivare",{group:"3d",kind:"lib",icon:"printer",title:"Min skrivare",sub:"Creality K1C: inställningar per material och tips",
+  form:()=>sec("",note(`Utgå alltid från värdena på rullen. De här är bra startvärden för ${PRN.name}.`)),
+  build(){return `<div class="prn-head"><div><p class="eyebrow">Min skrivare</p><h3>${PRN.name}</h3></div><div class="prn-spec"><span><b>${PRN.x} × ${PRN.y} × ${PRN.z}</b> mm byggyta</span><span><b>300 °C</b> munstycke</span><span><b>100 °C</b> bädd</span></div></div>
+    <div class="prn-mats">${MATG.map(g=>`<div class="prn-mat"><div class="prn-mh"><b>${g.m}</b><small>${esc(g.use)}</small></div><div class="prn-vals"><span><small>Munstycke</small>${g.noz}</span><span><small>Bädd</small>${g.bed}</span><span><small>Fläkt</small>${g.fan}</span></div><p>${esc(g.tips)}</p></div>`).join("")}</div>
+    <div class="prn-tips"><p class="eyebrow">Bra att komma ihåg</p><ul>
+      <li>Kör den automatiska kalibreringen första gången och efter flytt.</li>
+      <li>Välj profilen <b>Creality K1C 0.4 nozzle</b> i Creality Print eller Orca Slicer, och rätt material.</li>
+      <li>Håll bädden ren. Torka med diskmedel och vatten när saker börjar släppa.</li>
+      <li>PETG och TPU drar åt sig fukt. Förvara rullarna i en låda med torkpåsar.</li>
+      <li>Skriv in nya rullar i Filamentlagret och kolla vad utskriften kostar innan du kör.</li></ul></div>`}});
 tool("filament",{group:"3d",kind:"lib",icon:"spool",title:"Filamentlagret",sub:"Dina rullar, hur mycket som är kvar och vad de kostar",
   form:()=>sec("Ny rulle",row(fld("Material",sel("mat",[["PLA","PLA"],["PETG","PETG"],["TPU","TPU"],["ABS","ABS"],["ASA","ASA"]],"PLA")),fld("Färg",inp("color","",'placeholder="Svart" data-nokeep')),fld("Märke",inp("brand","",'placeholder="Bambu Lab" data-nokeep')))+
       row(fld("Vikt (g)",inp("size","1000",'inputmode="decimal"')),fld("Pris (kr)",inp("price","250",'inputmode="decimal"')))+`<p class="err" id="sp-err" hidden></p>`+acts(act("add","Lägg till rulle",true)))+
@@ -2567,8 +2594,8 @@ tool("filament",{group:"3d",kind:"lib",icon:"spool",title:"Filamentlagret",sub:"
       `<div class="pbar${pct<15?" low":""}"><i style="width:${pct}%"></i></div><div class="addrow" style="flex-wrap:wrap"><input id="spu-${s.id}" inputmode="decimal" placeholder="gram" aria-label="Gram" style="max-width:100px"><button class="btn sm" data-sp="use" data-id="${s.id}">Dra av</button><button class="btn sm" data-sp="set" data-id="${s.id}">Så mycket kvar</button><button class="btn sm" data-sp="label" data-id="${s.id}">Etikett</button><button class="x" data-sp="del" data-id="${s.id}" aria-label="Ta bort">×</button></div></div>`}).join("")||note("Inga rullar ännu."))}});
 tool("kostnad",{group:"3d",kind:"calc",icon:"coin",title:"Vad kostar utskriften?",sub:"Filament och el, och dra av från rullen",
   form:()=>sec("",fld("Rulle",sel("sp",[["","Eget pris"]].concat(SP.map(s=>[s.id,spName(s)])),""))+row(fld("Filament (gram)",inp("g","35",'inputmode="decimal"')),fld("Pris (kr/kg)",inp("kg",String(P3.price),'inputmode="decimal"')))+
-    row(fld("Tid (timmar)",inp("h","2,5",'inputmode="decimal"')),fld("Skrivarens effekt (watt)",inp("wt","120",'inputmode="decimal"')),fld("Elpris (kr/kWh)",inp("el","1,50",'inputmode="decimal"')))+
-    note("Gram och tid står i skrivarens program när du har förberett utskriften.")+acts(act("draw","Dra av grammen från rullen"))+`<p class="note" id="ko-msg"></p>`),
+    row(fld("Tid (timmar)",inp("h","2,5",'inputmode="decimal"')),fld("Skrivarens effekt (watt)",inp("wt",String(PRN.w),'inputmode="decimal"')),fld("Elpris (kr/kWh)",inp("el","1,50",'inputmode="decimal"')))+
+    note(`Gram och tid står i Creality Print när du har förberett utskriften. ${PRN.name} drar runt 100–150 W i snitt med PLA och PETG, lite mer med ABS och ASA eftersom bädden är varmare.`)+acts(act("draw","Dra av grammen från rullen"))+`<p class="note" id="ko-msg"></p>`),
   actions:{draw(){const s=SP.find(x=>x.id===v("sp")),m=$("#ko-msg");if(!s){m.textContent="Välj en rulle först.";return}const g=num(v("g"));s.left=Math.max(0,num(s.left)-g);saveSP();
     m.textContent=`Drog av ${qtyF(g)} g. ${Math.round(s.left)} g kvar på rullen.`;const o=form.querySelector(`[data-k="sp"] option[value="${s.id}"]`);if(o)o.textContent=spName(s)}},
   build(){const s=SP.find(x=>x.id===v("sp")),ke=form.querySelector('[data-k="kg"]');if(ke){ke.disabled=!!s;if(s)ke.value=qtyF(Math.round(kgPrice(s)*100)/100)}
