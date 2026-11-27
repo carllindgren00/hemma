@@ -1572,6 +1572,207 @@ tool("skylt",{group:"3d",kind:"3d",icon:"tag3",title:"Namnskylt och nyckelring",
   full:()=>meshStep(plateModel(.25,plateOpts())),fname:()=>`${(v("text")||"skylt").trim().toLowerCase().replace(/[^a-z0-9åäö]+/g,"-").replace(/^-|-$/g,"")||"skylt"}.stl`});
 
 
+// --- egen modell från kod (CSG med BSP-träd)
+const K3=(()=>{
+  const EPS=1e-5;
+  class V{constructor(x,y,z){this.x=x;this.y=y;this.z=z}
+    c(){return new V(this.x,this.y,this.z)}neg(){return new V(-this.x,-this.y,-this.z)}
+    add(a){return new V(this.x+a.x,this.y+a.y,this.z+a.z)}sub(a){return new V(this.x-a.x,this.y-a.y,this.z-a.z)}
+    mul(k){return new V(this.x*k,this.y*k,this.z*k)}dot(a){return this.x*a.x+this.y*a.y+this.z*a.z}
+    lerp(a,t){return this.add(a.sub(this).mul(t))}len(){return Math.hypot(this.x,this.y,this.z)}unit(){const l=this.len()||1;return this.mul(1/l)}}
+  class Pl{constructor(n,w){this.n=n;this.w=w}c(){return new Pl(this.n.c(),this.w)}flip(){this.n=this.n.neg();this.w=-this.w}
+    split(p,cf,cb,fr,bk){let t=0;const ty=[];
+      for(const v of p.v){const d=this.n.dot(v)-this.w,q=d<-EPS?2:d>EPS?1:0;t|=q;ty.push(q)}
+      if(t===0)(this.n.dot(p.pl.n)>0?cf:cb).push(p);else if(t===1)fr.push(p);else if(t===2)bk.push(p);
+      else{const f=[],b=[],L=p.v.length;
+        for(let i=0;i<L;i++){const j=(i+1)%L,ti=ty[i],tj=ty[j],vi=p.v[i],vj=p.v[j];
+          if(ti!==2)f.push(vi);if(ti!==1)b.push(ti!==2?vi.c():vi);
+          if((ti|tj)===3){const s=(this.w-this.n.dot(vi))/this.n.dot(vj.sub(vi)),m=vi.lerp(vj,s);f.push(m);b.push(m.c())}}
+        if(f.length>=3)fr.push(new Po(f,p.pl.c()));if(b.length>=3)bk.push(new Po(b,p.pl.c()))}}}
+  class Po{constructor(v,pl){this.v=v;if(pl)this.pl=pl;else{let nx=0,ny=0,nz=0;const L=v.length;
+      for(let i=0;i<L;i++){const a=v[i],b=v[(i+1)%L];nx+=(a.y-b.y)*(a.z+b.z);ny+=(a.z-b.z)*(a.x+b.x);nz+=(a.x-b.x)*(a.y+b.y)}
+      const n=new V(nx,ny,nz).unit();this.pl=new Pl(n,n.dot(v[0]))}}
+    c(){return new Po(this.v.map(x=>x.c()),this.pl.c())}flip(){this.v.reverse();this.pl.flip()}}
+  class N{constructor(ps){this.pl=null;this.f=null;this.b=null;this.ps=[];if(ps)this.build(ps)}
+    invert(){for(const p of this.ps)p.flip();if(this.pl)this.pl.flip();if(this.f)this.f.invert();if(this.b)this.b.invert();const t=this.f;this.f=this.b;this.b=t}
+    clip(ps){if(!this.pl)return ps.slice();let f=[],b=[];for(const p of ps)this.pl.split(p,f,b,f,b);if(this.f)f=this.f.clip(f);b=this.b?this.b.clip(b):[];return f.concat(b)}
+    clipTo(t){this.ps=t.clip(this.ps);if(this.f)this.f.clipTo(t);if(this.b)this.b.clipTo(t)}
+    all(){let a=this.ps.slice();if(this.f)a=a.concat(this.f.all());if(this.b)a=a.concat(this.b.all());return a}
+    build(ps){if(!ps.length)return;if(!this.pl)this.pl=ps[0].pl.c();const f=[],b=[];for(const p of ps)this.pl.split(p,this.ps,this.ps,f,b);
+      if(f.length){if(!this.f)this.f=new N();this.f.build(f)}if(b.length){if(!this.b)this.b=new N();this.b.build(b)}}}
+  const cl=ps=>ps.map(p=>p.c());
+  function bb(ps){const m=[1e9,1e9,1e9],M=[-1e9,-1e9,-1e9];for(const p of ps)for(const v of p.v){if(v.x<m[0])m[0]=v.x;if(v.y<m[1])m[1]=v.y;if(v.z<m[2])m[2]=v.z;if(v.x>M[0])M[0]=v.x;if(v.y>M[1])M[1]=v.y;if(v.z>M[2])M[2]=v.z}return[m,M]}
+  const apart=(a,b)=>{const A=bb(a),B=bb(b);for(let i=0;i<3;i++)if(A[1][i]<B[0][i]-EPS||B[1][i]<A[0][i]-EPS)return true;return false};
+  function uni(a,b){if(!a.length)return cl(b);if(!b.length)return cl(a);if(apart(a,b))return cl(a).concat(cl(b));
+    const A=new N(cl(a)),B=new N(cl(b));A.clipTo(B);B.clipTo(A);B.invert();B.clipTo(A);B.invert();A.build(B.all());return A.all()}
+  function dif(a,b){if(!a.length||!b.length||apart(a,b))return cl(a);
+    const A=new N(cl(a)),B=new N(cl(b));A.invert();A.clipTo(B);B.clipTo(A);B.invert();B.clipTo(A);B.invert();A.build(B.all());A.invert();return A.all()}
+  function isc(a,b){if(!a.length||!b.length||apart(a,b))return[];
+    const A=new N(cl(a)),B=new N(cl(b));A.invert();B.clipTo(A);B.invert();A.clipTo(B);B.clipTo(A);A.build(B.all());A.invert();return A.all()}
+
+  class S{constructor(ps){this.ps=ps}
+    _map(f,flip){return new S(this.ps.map(p=>{const v=p.v.map(f);if(flip)v.reverse();return new Po(v)}))}
+    translate(x=0,y=0,z=0){if(Array.isArray(x))[x=0,y=0,z=0]=x;return this._map(v=>new V(v.x+x,v.y+y,v.z+z))}
+    rotate(x=0,y=0,z=0){if(Array.isArray(x))[x=0,y=0,z=0]=x;const r=Math.PI/180,cx=Math.cos(x*r),sx=Math.sin(x*r),cy=Math.cos(y*r),sy=Math.sin(y*r),cz=Math.cos(z*r),sz=Math.sin(z*r);
+      return this._map(v=>{let a=v.x,b=v.y*cx-v.z*sx,c=v.y*sx+v.z*cx;let d=a*cy+c*sy;c=-a*sy+c*cy;a=d;d=a*cz-b*sz;b=a*sz+b*cz;return new V(d,b,c)})}
+    scale(x=1,y,z){if(Array.isArray(x))[x=1,y=1,z=1]=x;if(y==null)y=x;if(z==null)z=x;return this._map(v=>new V(v.x*x,v.y*y,v.z*z),x*y*z<0)}
+    mirror(ax="x"){return this.scale(ax==="x"?-1:1,ax==="y"?-1:1,ax==="z"?-1:1)}
+    union(...o){return union(this,...o)}subtract(...o){return difference(this,...o)}intersect(...o){return intersection(this,...o)}
+    center(){const[m,M]=bb(this.ps);return this.translate(-(m[0]+M[0])/2,-(m[1]+M[1])/2,-(m[2]+M[2])/2)}
+    onFloor(){const[m]=bb(this.ps);return this.translate(0,0,-m[2])}
+    bounds(){const[m,M]=bb(this.ps);return{min:m,max:M,size:[M[0]-m[0],M[1]-m[1],M[2]-m[2]]}}}
+  const flat=a=>a.flat(Infinity).filter(x=>x&&x.ps);
+  function union(...o){const s=flat(o);if(!s.length)return new S([]);let r=s[0].ps;for(let i=1;i<s.length;i++)r=uni(r,s[i].ps);return new S(r)}
+  function difference(a,...o){a=flat([a]);let r=union(a).ps;for(const s of flat(o))r=dif(r,s.ps);return new S(r)}
+  function intersection(...o){const s=flat(o);if(!s.length)return new S([]);let r=s[0].ps;for(let i=1;i<s.length;i++)r=isc(r,s[i].ps);return new S(r)}
+
+  const P=(x,y,z)=>new V(x,y,z);
+  const segs=(r,fn)=>fn||Math.max(16,Math.min(96,Math.round(r*6)));
+  function cube(x=10,y,z,o={}){if(Array.isArray(x)){o=y||{};[x,y,z]=x}else if(typeof y==="object"){o=y;y=z=x}if(y==null)y=x;if(z==null)z=y;
+    const c=o.center===true,ox=c?-x/2:0,oy=c?-y/2:0,oz=c?-z/2:0;
+    const F=[[0,4,6,2],[1,3,7,5],[0,1,5,4],[2,6,7,3],[0,2,3,1],[4,5,7,6]];
+    return new S(F.map(f=>new Po(f.map(i=>P(ox+(i&1?x:0),oy+(i&2?y:0),oz+(i&4?z:0))))))}
+  function cylinder(r=5,h=10,o={}){if(typeof r==="object"){o=r;r=o.r!=null?o.r:(o.d||10)/2;h=o.h!=null?o.h:10}
+    const r1=o.r1!=null?o.r1:o.d1!=null?o.d1/2:r,r2=o.r2!=null?o.r2:o.d2!=null?o.d2/2:r1,n=segs(Math.max(r1,r2),o.fn),z0=o.center?-h/2:0,z1=z0+h;
+    const pt=(i,rr,z)=>{const a=i/n*Math.PI*2;return P(Math.cos(a)*rr,Math.sin(a)*rr,z)},ps=[],bot=[],top=[];
+    for(let i=0;i<n;i++){bot.push(pt(n-i,r1,z0));top.push(pt(i,r2,z1));const a=pt(i,r1,z0),b=pt(i+1,r1,z0),c=pt(i+1,r2,z1),d=pt(i,r2,z1);
+      ps.push(r1<=EPS?new Po([a,c,d]):r2<=EPS?new Po([a,b,c]):new Po([a,b,c,d]))}
+    if(r1>EPS)ps.push(new Po(bot));if(r2>EPS)ps.push(new Po(top));return new S(ps)}
+  const cone=(r=5,h=10,o={})=>cylinder(r,h,Object.assign({r1:r,r2:0},o));
+  function sphere(r=5,o={}){if(typeof r==="object"){o=r;r=o.r!=null?o.r:(o.d||10)/2}const n=segs(r,o.fn),m=Math.max(6,Math.round(n/2)),ps=[];
+    const pt=(i,j)=>{const t=i/n*Math.PI*2,p=j/m*Math.PI;return P(Math.cos(t)*Math.sin(p)*r,Math.sin(t)*Math.sin(p)*r,Math.cos(p)*r)};
+    for(let i=0;i<n;i++)for(let j=0;j<m;j++){const a=pt(i,j),b=pt(i,j+1),c=pt(i+1,j+1),d=pt(i+1,j);
+      ps.push(j===0?new Po([a,b,c]):j===m-1?new Po([a,b,d]):new Po([a,b,c,d]))}
+    const s=new S(ps);return o.center===false?s.translate(0,0,r):s}
+  // 2D-former: listor av [x,y]
+  const circle=(r=5,fn)=>{const n=segs(r,fn),a=[];for(let i=0;i<n;i++){const t=i/n*Math.PI*2;a.push([Math.cos(t)*r,Math.sin(t)*r])}return a};
+  const rect=(w=10,d=10,o={})=>{const x=o.center?-w/2:0,y=o.center?-d/2:0;return[[x,y],[x+w,y],[x+w,y+d],[x,y+d]]};
+  function roundedRect(w=20,d=20,r=3,o={}){r=Math.max(0,Math.min(r,w/2-EPS,d/2-EPS));if(r<=EPS)return rect(w,d,o);const x=o.center?-w/2:0,y=o.center?-d/2:0,k=Math.max(4,Math.round(segs(r,o.fn)/4)),a=[];
+    [[x+w-r,y+r,-90],[x+w-r,y+d-r,0],[x+r,y+d-r,90],[x+r,y+r,180]].forEach(([cx,cy,s])=>{for(let i=0;i<=k;i++){const t=(s+i/k*90)*Math.PI/180;a.push([cx+Math.cos(t)*r,cy+Math.sin(t)*r])}});return a}
+  function earcut(pts){const n=pts.length,idx=[...Array(n).keys()],tri=[];let guard=0;
+    const cr=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+    const inside=(p,a,b,c)=>cr(a,b,p)>=-1e-12&&cr(b,c,p)>=-1e-12&&cr(c,a,p)>=-1e-12;
+    while(idx.length>3&&guard++<n*n){let cut=false;
+      for(let i=0;i<idx.length;i++){const ia=idx[(i+idx.length-1)%idx.length],ib=idx[i],ic=idx[(i+1)%idx.length],a=pts[ia],b=pts[ib],c=pts[ic];
+        if(cr(a,b,c)<=1e-12)continue;let ok=true;for(const j of idx){if(j===ia||j===ib||j===ic)continue;if(inside(pts[j],a,b,c)){ok=false;break}}
+        if(ok){tri.push([ia,ib,ic]);idx.splice(i,1);cut=true;break}}
+      if(!cut)break}
+    if(idx.length===3)tri.push(idx.slice());return tri}
+  function convex(pts){for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length],c=pts[(i+2)%pts.length];if((b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])<-1e-9)return false}return true}
+  function extrude(pts,h=5,o={}){if(!Array.isArray(pts)||pts.length<3)throw new Error("extrude behöver minst tre punkter");
+    pts=pts.map(p=>[+p[0],+p[1]]);let ar=0;for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length];ar+=a[0]*b[1]-b[0]*a[1]}if(ar<0)pts.reverse();
+    const sc=o.scale!=null?o.scale:1,z0=o.center?-h/2:0,z1=z0+h,ps=[],L=pts.length;
+    const lo=i=>P(pts[i][0],pts[i][1],z0),hi=i=>P(pts[i][0]*sc,pts[i][1]*sc,z1);
+    for(let i=0;i<L;i++){const j=(i+1)%L;ps.push(new Po([lo(i),lo(j),hi(j),hi(i)]))}
+    if(convex(pts)){ps.push(new Po(pts.map((_,i)=>lo(L-1-i))));ps.push(new Po(pts.map((_,i)=>hi(i))))}
+    else for(const t of earcut(pts)){ps.push(new Po([lo(t[2]),lo(t[1]),lo(t[0])]));ps.push(new Po([hi(t[0]),hi(t[1]),hi(t[2])]))}
+    return new S(ps)}
+  const roundedBox=(w=20,d=20,h=10,r=3,o={})=>extrude(roundedRect(w,d,r,o),h,o);
+  const tube=(r=10,wall=2,h=10,o={})=>difference(cylinder(r,h,o),cylinder(r-wall,h+2,o).translate(0,0,-1));
+
+  // kör koden
+  function run(code,vals){const params=[];
+    const param=(k,def,label,o={})=>{if(params.some(p=>p.k===k))throw new Error(`param "${k}" finns två gånger`);params.push(Object.assign({k,def,label:label||k},o));
+      const s=vals&&vals[k]!=null?String(vals[k]).trim():"";const x=parseFloat(s.replace(",","."));return s&&isFinite(x)?x:def};
+    const api={cube,cylinder,cone,sphere,extrude,roundedBox,tube,circle,rect,roundedRect,union,difference,intersection,param};
+    const fn=new Function(...Object.keys(api),'"use strict";\n'+code);let r=fn(...Object.values(api));
+    if(Array.isArray(r))r=union(r);if(!r||!r.ps)throw new Error("Koden måste sluta med return och en modell, till exempel return cube(20);");
+    if(!r.ps.length)throw new Error("Modellen blev tom. Kolla måtten.");
+    const tri=[];for(const p of r.ps){const v=p.v;for(let i=1;i<v.length-1;i++)tri.push(v[0].x,v[0].y,v[0].z,v[i].x,v[i].y,v[i].z,v[i+1].x,v[i+1].y,v[i+1].z)}
+    let mz=1e9;for(let i=2;i<tri.length;i+=3)if(tri[i]<mz)mz=tri[i];for(let i=2;i<tri.length;i+=3)tri[i]-=mz;
+    return{tri,params}}
+  function info(tri){const m=[1e9,1e9,1e9],M=[-1e9,-1e9,-1e9];let vol=0;
+    for(let i=0;i<tri.length;i+=9){for(let k=0;k<9;k+=3)for(let a=0;a<3;a++){const x=tri[i+k+a];if(x<m[a])m[a]=x;if(x>M[a])M[a]=x}
+      const[ax,ay,az,bx,by,bz,cx,cy,cz]=tri.slice(i,i+9);vol+=(ax*(by*cz-bz*cy)-ay*(bx*cz-bz*cx)+az*(bx*cy-by*cx))/6}
+    return{min:m,max:M,size:[M[0]-m[0],M[1]-m[1],M[2]-m[2]],vol:Math.abs(vol),n:tri.length/9}}
+  return{run,info}
+})();
+const K3EX=`// Namn: Väggkrok
+// Exempel. Be Claude om en modell och klistra in koden här.
+const bredd = param("bredd", 20, "Bredd (mm)");
+const tjock = param("tjock", 5, "Tjocklek (mm)");
+const hojd  = param("hojd", 60, "Höjd (mm)");
+const djup  = param("djup", 35, "Krokens djup (mm)");
+const skruv = param("skruv", 4, "Skruv (mm)");
+
+const platta = roundedBox(bredd, tjock, hojd, 3);
+const arm  = cube(bredd, djup, tjock);
+const spets = cube(bredd, tjock, 15).translate(0, djup - tjock, 0);
+const hal = [hojd - 12, hojd - 32].map(z =>
+  cylinder(skruv / 2 + 0.3, tjock + 2).rotate(-90, 0, 0).translate(bredd / 2, -1, z));
+
+return difference(union(platta, arm, spets), hal);`;
+let KM=store.get("3d-kod",null);if(!Array.isArray(KM)||!KM.length)KM=[{id:"ex",code:K3EX,vals:{}}];
+let kCur=store.get("3d-kod-cur",KM[0].id);if(!KM.some(m=>m.id===kCur))kCur=KM[0].id;
+const kNow=()=>KM.find(m=>m.id===kCur)||KM[0];
+const kName=c=>{const m=/^\s*\/\/\s*Namn:\s*(.+)$/m.exec(c||"");return m?m[1].trim():"Namnlös modell"};
+let kSaveT=0;const saveKM=()=>{clearTimeout(kSaveT);kSaveT=setTimeout(()=>{store.set("3d-kod",KM);store.set("3d-kod-cur",kCur)},600)};
+const KV={yaw:-38,pitch:28,zoom:1};let kMesh=null,kKey="",kSig="";
+function kRun(){const m=kNow(),key=m.code+"\u0001"+JSON.stringify(m.vals||{});if(key===kKey&&kMesh)return kMesh;kKey=key;
+  try{const r=K3.run(m.code,m.vals);kMesh={tri:r.tri,params:r.params,info:K3.info(r.tri)}}catch(e){kMesh={err:String(e&&e.message||e),params:kMesh&&kMesh.params||[]}}return kMesh}
+function kDraw(cv,M){const dpr=Math.min(2,window.devicePixelRatio||1),st=$("#t-stage"),Wc=Math.max(240,Math.min(560,(st?st.clientWidth:340)-34)),Hc=Math.round(Wc*.8);
+  if(cv.width!==Math.round(Wc*dpr)){cv.width=Math.round(Wc*dpr);cv.height=Math.round(Hc*dpr)}const g=cv.getContext("2d"),W=cv.width,H=cv.height;g.clearRect(0,0,W,H);
+  if(!M||M.err||!M.tri){g.fillStyle="#64748b";g.font=`${14*dpr}px Inter,Arial,sans-serif`;g.textAlign="center";g.fillText(M&&M.err?"Koden gick inte att köra":"Ingen modell",W/2,H/2);return}
+  const{tri,info}=M,cx=(info.min[0]+info.max[0])/2,cy=(info.min[1]+info.max[1])/2,cz=(info.min[2]+info.max[2])/2,R=Math.max(1,Math.hypot(...info.size)/2);
+  const ya=KV.yaw*Math.PI/180,pa=KV.pitch*Math.PI/180,cY=Math.cos(ya),sY=Math.sin(ya),cP=Math.cos(pa),sP=Math.sin(pa),k=Math.min(W,H)*.46/R*KV.zoom;
+  // vy: x åt höger, y uppåt på skärmen, z mot betraktaren
+  const pr=(x,y,z)=>{x-=cx;y-=cy;z-=cz;const a=x*cY-y*sY,b=x*sY+y*cY;return[a,z*cP+b*sP,z*sP-b*cP]};
+  // golv med rutnät var 10:e mm
+  const z0=info.min[2],gx0=Math.floor((info.min[0]-5)/10)*10,gx1=Math.ceil((info.max[0]+5)/10)*10,gy0=Math.floor((info.min[1]-5)/10)*10,gy1=Math.ceil((info.max[1]+5)/10)*10;
+  const S=p=>[W/2+p[0]*k,H/2-p[1]*k];g.lineWidth=dpr;g.strokeStyle="rgba(100,116,139,.22)";g.beginPath();
+  for(let x=gx0;x<=gx1;x+=10){const a=S(pr(x,gy0,z0)),b=S(pr(x,gy1,z0));g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1])}
+  for(let y=gy0;y<=gy1;y+=10){const a=S(pr(gx0,y,z0)),b=S(pr(gx1,y,z0));g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1])}g.stroke();
+  const n=tri.length/9,F=[],[r0,g0,b0]=hexRGB("#e8862a"),L=[-.45,.55,.7],ll=Math.hypot(...L);
+  for(let i=0;i<n;i++){const o=i*9,A=pr(tri[o],tri[o+1],tri[o+2]),B=pr(tri[o+3],tri[o+4],tri[o+5]),C=pr(tri[o+6],tri[o+7],tri[o+8]);
+    const ux=B[0]-A[0],uy=B[1]-A[1],uz=B[2]-A[2],vx=C[0]-A[0],vy=C[1]-A[1],vz=C[2]-A[2];let nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;const nl=Math.hypot(nx,ny,nz);
+    if(nl<1e-12||nz<=0)continue;nx/=nl;ny/=nl;nz/=nl;const f=.35+.75*Math.max(0,(nx*L[0]+ny*L[1]+nz*L[2])/ll);F.push([(A[2]+B[2]+C[2])/3,A,B,C,f])}
+  F.sort((a,b)=>a[0]-b[0]);
+  for(const[,A,B,C,f]of F){const a=S(A),b=S(B),c=S(C),col=`rgb(${Math.min(255,r0*f)|0},${Math.min(255,g0*f)|0},${Math.min(255,b0*f)|0})`;
+    g.fillStyle=col;g.strokeStyle=col;g.lineWidth=.6;g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.lineTo(c[0],c[1]);g.closePath();g.fill();g.stroke()}}
+let kCv=null;
+function kCanvas(){if(kCv)return kCv;const cv=document.createElement("canvas");cv.className="k3";cv.style.touchAction="none";cv.style.cursor="grab";
+  const P=new Map();let d0=0,z0=1;
+  cv.addEventListener("pointerdown",e=>{cv.setPointerCapture(e.pointerId);P.set(e.pointerId,[e.clientX,e.clientY]);if(P.size===2){const[a,b]=[...P.values()];d0=Math.hypot(a[0]-b[0],a[1]-b[1]);z0=KV.zoom}});
+  cv.addEventListener("pointermove",e=>{const p=P.get(e.pointerId);if(!p)return;
+    if(P.size===1){KV.yaw+=(e.clientX-p[0])*.5;KV.pitch=Math.max(-89,Math.min(89,KV.pitch+(e.clientY-p[1])*.5))}
+    P.set(e.pointerId,[e.clientX,e.clientY]);if(P.size===2&&d0){const[a,b]=[...P.values()];KV.zoom=Math.max(.3,Math.min(5,z0*Math.hypot(a[0]-b[0],a[1]-b[1])/d0))}
+    kDraw(cv,kMesh)});
+  const up=e=>{P.delete(e.pointerId);if(P.size<2)d0=0};cv.addEventListener("pointerup",up);cv.addEventListener("pointercancel",up);
+  cv.addEventListener("wheel",e=>{e.preventDefault();KV.zoom=Math.max(.3,Math.min(5,KV.zoom*(e.deltaY<0?1.1:.9)));kDraw(cv,kMesh)},{passive:false});
+  cv.addEventListener("dblclick",()=>{KV.yaw=-38;KV.pitch=28;KV.zoom=1;kDraw(cv,kMesh)});
+  return kCv=cv}
+function kParams(params){const box=form.querySelector("#k3-params");if(!box)return;const sig=params.map(p=>p.k+"|"+p.label).join(";");if(sig===kSig)return;kSig=sig;const m=kNow();m.vals=m.vals||{};
+  box.closest("section").hidden=!params.length;
+  box.innerHTML=params.length?`<div class="frow" style="flex-wrap:wrap">${params.map(p=>fld(esc(p.label),`<input data-kp="${esc(p.k)}" data-nokeep inputmode="decimal" value="${esc(String(m.vals[p.k]!=null?m.vals[p.k]:p.def).replace(".",","))}">`)).join("")}</div>`+acts(act("reset","Återställ måtten")):""}
+function kFill(){const m=kNow(),s=form.querySelector('[data-k="mid"]');
+  if(s)s.innerHTML=KM.map(x=>`<option value="${x.id}" ${x.id===kCur?"selected":""}>${esc(kName(x.code))}</option>`).join("");
+  const ta=form.querySelector('[data-k="code"]');if(ta)ta.value=m.code;kSig="";kKey=""}
+tool("kod",{group:"3d",kind:"3d",icon:"cube",title:"Egen modell från Claude",sub:"Beskriv saken för Claude, klistra in koden och ladda ner STL",
+  form:()=>sec("",fld("Modell",`<select data-k="mid" id="f-mid" data-nokeep></select>`)+acts(act("paste","Klistra in ny från Claude",true),act("ny","Tom modell"),act("copy","Kopiera koden"),act("del","Ta bort")))+
+    sec("Mått",`<div id="k3-params"></div>`)+
+    sec("Kod",area("code","",'data-nokeep spellcheck="false" autocapitalize="off" autocorrect="off" rows="12" style="font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;overflow:auto;tab-size:2"')+
+      `<p class="err" id="k3-err" hidden></p>`+note("Be Claude om en modell för Hemma, till exempel ”en krok för 25 mm rör”, och klistra in koden du får. Klistra bara in kod från Claude eller som du skrivit själv. Dra i bilden för att vrida, nyp för att zooma.")),
+  actions:{
+    async paste(){let t="";try{t=await navigator.clipboard.readText()}catch(e){}
+      const m={id:Date.now().toString(36),code:t&&/return/.test(t)?t.trim():"// Namn: Ny modell\n\nreturn cube(20, 20, 10);",vals:{}};KM.unshift(m);kCur=m.id;saveKM();kFill();render(false);
+      if(!t){const ta=form.querySelector('[data-k="code"]');ta.select();ta.focus()}},
+    ny(){const m={id:Date.now().toString(36),code:"// Namn: Ny modell\n\nreturn cube(20, 20, 10);",vals:{}};KM.unshift(m);kCur=m.id;saveKM();kFill()},
+    copy(){const c=kNow().code;try{navigator.clipboard.writeText(c)}catch(e){}},
+    del(){const m=kNow();if(!confirm(`Ta bort ”${kName(m.code)}”?`))return;KM=KM.filter(x=>x!==m);if(!KM.length)KM=[{id:"ex",code:K3EX,vals:{}}];kCur=KM[0].id;saveKM();kFill()},
+    reset(){kNow().vals={};saveKM();kSig="";kKey=""}},
+  init(){kFill();
+    form.querySelector('[data-k="mid"]').addEventListener("change",e=>{kCur=e.target.value;saveKM();kFill();render(false)});
+    form.querySelector('[data-k="code"]').addEventListener("input",e=>{const m=kNow();m.code=e.target.value;saveKM();const o=form.querySelector(`[data-k="mid"] option[value="${m.id}"]`);if(o)o.textContent=kName(m.code)});
+    if(!form._k3){form._k3=1;form.addEventListener("input",e=>{const k=e.target.dataset&&e.target.dataset.kp;if(k==null||curTool!==T.kod)return;const m=kNow();(m.vals=m.vals||{})[k]=e.target.value;saveKM();schedule()})}},
+  preview(){const M=kRun(),cv=kCanvas();kParams(M.params||[]);const er=$("#k3-err");if(er){er.hidden=!M.err;er.textContent=M.err?"Fel i koden: "+M.err:""}
+    requestAnimationFrame(()=>kDraw(cv,M));kDraw(cv,M);$("#t-print").disabled=!!M.err;
+    if(M.err)return{canvas:cv,meta:"Rätta koden, eller be Claude om en ny version."};
+    const i=M.info,g=i.vol/1000*PLA;
+    return{canvas:cv,meta:`${mm(i.size[0])} × ${mm(i.size[1])} × ${mm(i.size[2])} mm · högst ${qtyF(Math.round(g*10)/10)} g (${money(g/1000*P3.price)}) helt massiv`}},
+  full(){const M=kRun();if(M.err)throw new Error(M.err);return M.tri},
+  fname:()=>`${kName(kNow().code).toLowerCase().replace(/[^a-z0-9åäö]+/g,"-").replace(/^-|-$/g,"")||"modell"}.stl`});
+
+
 // --- hitta modeller
 const SITES=[["Printables","https://www.printables.com/search/models?q="],["MakerWorld","https://makerworld.com/en/search/models?keyword="],["Thingiverse","https://www.thingiverse.com/search?type=things&q="]];
 const IDEAS=[["Kabelhållare","cable clip"],["Krokar","wall hook"],["Lådavdelare","drawer organizer"],["Telefonställ","phone stand"],["Blomkrukor","plant pot"],["Leksaker","toy"],["Vred och rattar","replacement knob"],["Garagevägg","garage wall mount"],["Verktygshållare","tool holder"],["Jul","christmas ornament"]];
