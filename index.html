@@ -1747,13 +1747,27 @@ function kParams(params){const box=form.querySelector("#k3-params");if(!box)retu
 function kFill(){const m=kNow(),s=form.querySelector('[data-k="mid"]');
   if(s)s.innerHTML=KM.map(x=>`<option value="${x.id}" ${x.id===kCur?"selected":""}>${esc(kName(x.code))}</option>`).join("");
   const ta=form.querySelector('[data-k="code"]');if(ta)ta.value=m.code;kSig="";kKey=""}
+const K3SPEC=`Skriv koden i ETT kodblock (js) och följ formatet exakt:
+- Första raden: // Namn: <kort namn>
+- Mått jag kan vilja ändra: const bredd = param("bredd", 20, "Bredd (mm)"); Allt i mm.
+- Vanlig JavaScript utan importer. Sista raden: return <modell>;
+- Funktioner: cube(x,y,z,{center}) (hörn i origo), cylinder(r,h,{r1,r2,fn,center}) (står på z=0 längs z, centrerad i x/y), cone(r,h), sphere(r), tube(r,vägg,h), roundedBox(x,y,z,radie), extrude(punkter,höjd,{scale}) där punkter är [[x,y],...] eller circle(r), rect(w,d,{center}), roundedRect(w,d,r,{center}); union(a,b,...), difference(a,b,...), intersection(a,b).
+- Metoder: .translate(x,y,z) .rotate(x,y,z) (grader) .scale(k) .mirror("x") .center() .onFloor() .subtract(...) .union(...)
+- Hål ska sticka ut 1 mm på båda sidor. Platt undersida på z=0, inga överhäng över 45°, väggar minst 1,5 mm, skruvhål +0,4 mm.
+- Ingen text eller andra funktioner.`;
+function k3Prompt(desc,code){return `Gör en 3D-modell för min 3D-skrivare (FDM) till min app Hemma: ${desc}\n\n`+(code?`Utgå från och ändra den här modellen:\n\`\`\`js\n${code}\n\`\`\`\n\n`:"")+K3SPEC+`\n\nSkriv en rad om mått och material efter kodblocket.`}
+function k3Code(t){const m=/```(?:js|javascript)?[^\n]*\n([\s\S]*?)```/i.exec(t||"");return(m?m[1]:t||"").trim()}
 tool("kod",{group:"3d",kind:"3d",icon:"cube",title:"Egen modell från Claude",sub:"Beskriv saken för Claude, klistra in koden och ladda ner STL",
-  form:()=>sec("",fld("Modell",`<select data-k="mid" id="f-mid" data-nokeep></select>`)+acts(act("paste","Klistra in ny från Claude",true),act("ny","Tom modell"),act("copy","Kopiera koden"),act("del","Ta bort")))+
+  form:()=>sec("Beskriv vad du vill ha",area("desc","",'rows="3" placeholder="En krok till garageväggen för en 25 mm stång, med två skruvhål"')+chk("fromcur","Ändra modellen som är öppen",false)+acts(act("ask","Fråga Claude",true))+`<p class="note" id="k3-ask" hidden></p>`)+sec("",fld("Modell",`<select data-k="mid" id="f-mid" data-nokeep></select>`)+acts(act("paste","Klistra in ny från Claude",true),act("ny","Tom modell"),act("copy","Kopiera koden"),act("del","Ta bort")))+
     sec("Mått",`<div id="k3-params"></div>`)+
     sec("Kod",area("code","",'data-nokeep spellcheck="false" autocapitalize="off" autocorrect="off" rows="12" style="font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;overflow:auto;tab-size:2"')+
       `<p class="err" id="k3-err" hidden></p>`+note("Be Claude om en modell för Hemma, till exempel ”en krok för 25 mm rör”, och klistra in koden du får. Klistra bara in kod från Claude eller som du skrivit själv. Dra i bilden för att vrida, nyp för att zooma.")),
   actions:{
-    async paste(){let t="";try{t=await navigator.clipboard.readText()}catch(e){}
+    ask(){const d=v("desc").trim(),n=$("#k3-ask");if(!d){n.textContent="Skriv först vad du vill ha.";n.hidden=false;return}
+      const q=k3Prompt(d,c("fromcur")?kNow().code:"");try{navigator.clipboard.writeText(q)}catch(e){}
+      n.textContent="Frågan är kopierad. Om den inte står ifylld i Claude, klistra in den där. Kopiera sedan koden du får och tryck på Klistra in ny från Claude här.";n.hidden=false;
+      window.open("https://claude.ai/new?q="+encodeURIComponent(q),"_blank","noopener")},
+    async paste(){let t="";try{t=k3Code(await navigator.clipboard.readText())}catch(e){}
       const m={id:Date.now().toString(36),code:t&&/return/.test(t)?t.trim():"// Namn: Ny modell\n\nreturn cube(20, 20, 10);",vals:{}};KM.unshift(m);kCur=m.id;saveKM();kFill();render(false);
       if(!t){const ta=form.querySelector('[data-k="code"]');ta.select();ta.focus()}},
     ny(){const m={id:Date.now().toString(36),code:"// Namn: Ny modell\n\nreturn cube(20, 20, 10);",vals:{}};KM.unshift(m);kCur=m.id;saveKM();kFill()},
